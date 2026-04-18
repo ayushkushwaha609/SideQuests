@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users, sidequests, questMembers } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, gte } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 
 export async function GET(request: Request) {
@@ -22,10 +22,6 @@ export async function GET(request: Request) {
     )
     .orderBy(desc(sidequests.createdAt));
 
-  const myCompletions = await db.query.questCompletions.findMany({
-    where: (qc, { eq }) => eq(qc.userId, user.id),
-  });
-
   const now = new Date();
   
   function getStartOfPeriod(recur: string): Date {
@@ -38,13 +34,38 @@ export async function GET(request: Request) {
     return new Date(0); // one-time basically means forever
   }
 
+  const recurringQuests = myQuests.filter((q) => q.recurrence !== "one-time");
+  const startsByRecurrence = {
+    daily: getStartOfPeriod("daily"),
+    weekly: getStartOfPeriod("weekly"),
+    monthly: getStartOfPeriod("monthly"),
+    yearly: getStartOfPeriod("yearly"),
+  } as const;
+
+  const minStart = recurringQuests.length
+    ? Object.values(startsByRecurrence).reduce((min, d) => (d < min ? d : min))
+    : new Date(now.getTime());
+
+  const recentCompletions = recurringQuests.length
+    ? await db.query.questCompletions.findMany({
+        where: (qc, { eq, and, gte }) => and(eq(qc.userId, user.id), gte(qc.completedAt, minStart)),
+      })
+    : [];
+
+  const latestCompletionByQuest = new Map<string, Date>();
+  for (const c of recentCompletions) {
+    const prev = latestCompletionByQuest.get(c.questId);
+    if (!prev || c.completedAt > prev) {
+      latestCompletionByQuest.set(c.questId, c.completedAt);
+    }
+  }
+
   const processedQuests = myQuests.map((q) => {
     let computedStatus = q.status;
     if (computedStatus === "active" && q.recurrence !== "one-time") {
-      const startOfPeriod = getStartOfPeriod(q.recurrence);
-      const isCompletedRecently = myCompletions.some(
-        (c) => c.questId === q.id && new Date(c.completedAt) >= startOfPeriod
-      );
+      const startOfPeriod = startsByRecurrence[q.recurrence as keyof typeof startsByRecurrence];
+      const lastCompletedAt = latestCompletionByQuest.get(q.id);
+      const isCompletedRecently = Boolean(lastCompletedAt && lastCompletedAt >= startOfPeriod);
       if (isCompletedRecently) {
         computedStatus = "completed";
       }
