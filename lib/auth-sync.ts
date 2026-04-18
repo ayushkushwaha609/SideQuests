@@ -13,7 +13,16 @@ export async function getUserOrCreate() {
 
   // Lazy sync if webhook failed or hasn't fired yet
   if (!dbUser) {
-    const clerkUser = await currentUser();
+    let clerkUser: Awaited<ReturnType<typeof currentUser>> = null;
+    try {
+      clerkUser = await currentUser();
+    } catch (error) {
+      const clerkError = error as { status?: number; clerkError?: boolean };
+      if (clerkError?.clerkError && clerkError?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
     if (!clerkUser) return null;
 
     const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
