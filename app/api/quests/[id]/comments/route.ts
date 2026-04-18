@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { comments, users } from "@/db/schema";
 import { eq, desc, lt, and } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
+import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
 // GET /api/quests/[id]/comments — list comments for a quest
 export async function GET(
@@ -59,6 +60,14 @@ export async function POST(
   const { id: questId } = await params;
   const user = await getUserOrCreate();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const limitResult = rateLimit(`comments:${user.id}`, 10, 60_000);
+  if (!limitResult.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": retryAfterSeconds(limitResult.resetAt) } }
+    );
+  }
 
   const { content } = await request.json();
   if (!content?.trim()) {

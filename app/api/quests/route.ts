@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { users, sidequests, questMembers } from "@/db/schema";
 import { eq, and, desc, gte } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
+import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
 export async function GET(request: Request) {
   const user = await getUserOrCreate();
@@ -79,6 +80,14 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const user = await getUserOrCreate();
   if (!user) return NextResponse.json({ error: "Unauthorized or User not found" }, { status: 401 });
+
+  const limitResult = rateLimit(`quests:create:${user.id}`, 10, 60_000);
+  if (!limitResult.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": retryAfterSeconds(limitResult.resetAt) } }
+    );
+  }
 
   const body = await request.json();
   const { title, description, recurrence, visibility, coverEmoji, dueDate } = body;

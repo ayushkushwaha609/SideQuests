@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { users, sidequests, questCompletions, achievements, activities } from "@/db/schema";
 import { eq, and, count } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
+import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
 export async function POST(
   request: Request,
@@ -11,6 +12,14 @@ export async function POST(
   const { id: questId } = await params;
   const user = await getUserOrCreate();
   if (!user) return NextResponse.json({ error: "Unauthorized or User not found" }, { status: 401 });
+
+  const limitResult = rateLimit(`quests:complete:${user.id}`, 10, 60_000);
+  if (!limitResult.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": retryAfterSeconds(limitResult.resetAt) } }
+    );
+  }
 
   const quest = await db.query.sidequests.findFirst({ where: eq(sidequests.id, questId) });
   if (!quest) return NextResponse.json({ error: "Quest not found" }, { status: 404 });

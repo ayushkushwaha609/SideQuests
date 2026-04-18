@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { users, friendships } from "@/db/schema";
 import { eq, and, or, ilike, inArray } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
+import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
 export async function GET() {
   const user = await getUserOrCreate();
@@ -48,6 +49,14 @@ export async function GET() {
 export async function POST(request: Request) {
   const user = await getUserOrCreate();
   if (!user) return NextResponse.json({ error: "Unauthorized or User not found" }, { status: 401 });
+
+  const limitResult = rateLimit(`friends:${user.id}`, 5, 60_000);
+  if (!limitResult.ok) {
+    return NextResponse.json(
+      { error: "Too many requests" },
+      { status: 429, headers: { "Retry-After": retryAfterSeconds(limitResult.resetAt) } }
+    );
+  }
 
   const { friendId } = await request.json();
   if (!friendId) return NextResponse.json({ error: "friendId required" }, { status: 400 });

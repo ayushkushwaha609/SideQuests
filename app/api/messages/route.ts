@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { directMessages, users } from "@/db/schema";
 import { pusherServer } from "@/lib/pusher";
 import { getUserOrCreate } from "@/lib/auth-sync";
+import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { eq, and, lt, desc } from "drizzle-orm";
 
 export async function GET(req: Request) {
@@ -49,6 +50,14 @@ export async function POST(req: Request) {
   try {
     const user = await getUserOrCreate();
     if (!user) return new NextResponse("Unauthorized", { status: 401 });
+
+    const limitResult = rateLimit(`messages:${user.id}`, 20, 60_000);
+    if (!limitResult.ok) {
+      return new NextResponse("Too Many Requests", {
+        status: 429,
+        headers: { "Retry-After": retryAfterSeconds(limitResult.resetAt) },
+      });
+    }
 
     const { chatId, text, imageUrl } = await req.json();
     if (!chatId) return new NextResponse("Missing chatId", { status: 400 });
