@@ -1,0 +1,61 @@
+import { NextResponse } from "next/server";
+import { db } from "@/db";
+import { users, friendships } from "@/db/schema";
+import { eq, and, or, ilike } from "drizzle-orm";
+import { getUserOrCreate } from "@/lib/auth-sync";
+
+export async function GET() {
+  const user = await getUserOrCreate();
+  if (!user) return NextResponse.json({ error: "Unauthorized or User not found" }, { status: 401 });
+
+  const allFriendships = await db
+    .select()
+    .from(friendships)
+    .where(or(eq(friendships.userId, user.id), eq(friendships.friendId, user.id)));
+
+  const friends: any[] = [];
+  const pending: any[] = [];
+
+  for (const f of allFriendships) {
+    const otherId = f.userId === user.id ? f.friendId : f.userId;
+    const otherUser = await db.query.users.findFirst({ where: eq(users.id, otherId) });
+    if (!otherUser) continue;
+
+    const entry = {
+      ...otherUser,
+      friendshipId: f.id,
+      status: f.status,
+      role: f.userId === user.id ? "sender" : "receiver",
+    };
+
+    if (f.status === "accepted") friends.push(entry);
+    else pending.push(entry);
+  }
+
+  return NextResponse.json({ friends, pending });
+}
+
+export async function POST(request: Request) {
+  const user = await getUserOrCreate();
+  if (!user) return NextResponse.json({ error: "Unauthorized or User not found" }, { status: 401 });
+
+  const { friendId } = await request.json();
+  if (!friendId) return NextResponse.json({ error: "friendId required" }, { status: 400 });
+  if (friendId === user.id) return NextResponse.json({ error: "Cannot friend yourself" }, { status: 400 });
+
+  // Check existing
+  const existing = await db.query.friendships.findFirst({
+    where: or(
+      and(eq(friendships.userId, user.id), eq(friendships.friendId, friendId)),
+      and(eq(friendships.userId, friendId), eq(friendships.friendId, user.id))
+    ),
+  });
+  if (existing) return NextResponse.json({ error: "Already friends or pending" }, { status: 409 });
+
+  const [friendship] = await db
+    .insert(friendships)
+    .values({ userId: user.id, friendId, status: "pending" })
+    .returning();
+
+  return NextResponse.json({ friendship }, { status: 201 });
+}
