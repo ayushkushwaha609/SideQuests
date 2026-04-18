@@ -44,7 +44,7 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0 }: AppHeaderPr
         <Link href="/messages" style={{ color: "var(--text-muted)" }}>
           <MessageCircle size={20} />
         </Link>
-        <UserButton />
+        <UserButton userProfileMode="navigation" userProfileUrl="/settings" />
       </div>
     </header>
   );

@@ -45,7 +45,7 @@ export default function SettingsPage() {
       </div>
 
       <div style={{ display: "flex", justifyContent: "center" }}>
-        <UserProfile 
+        <UserProfile
           appearance={{
             elements: {
               card: "shadow-none border border-[var(--border)] bg-[var(--bg-base)] text-[var(--text-primary)] w-full max-w-full",
@@ -56,7 +56,7 @@ export default function SettingsPage() {
               button: "text-[var(--xp-purple)] hover:bg-[var(--bg-elevated)]",
               navbar: "hidden", // Hide sidebar nav to keep it clean on mobile
               navbarMobileMenuButton: "hidden",
-            }
+            },
           }}
         />
       </div>
