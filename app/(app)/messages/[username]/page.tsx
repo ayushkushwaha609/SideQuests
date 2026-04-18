@@ -49,19 +49,24 @@ export default async function DMPage({ params }: { params: Promise<{ username: s
   const chatId = [currentUser.id, targetUser.id].sort().join("_");
 
   // 4. Fetch past messages
+  const pageSize = 50;
   const initialMessages = await db.query.directMessages.findMany({
     where: eq(directMessages.chatId, chatId),
     orderBy: [desc(directMessages.createdAt)],
-    limit: 50,
+    limit: pageSize + 1,
   });
 
-  const formattedMessages = initialMessages.reverse().map(m => ({
+  const hasMore = initialMessages.length > pageSize;
+  const pageMessages = initialMessages.slice(0, pageSize);
+  const formattedMessages = pageMessages.reverse().map(m => ({
     id: m.id,
     userId: m.userId,
     text: m.text,
     imageUrl: m.imageUrl,
     createdAt: m.createdAt,
   }));
+
+  const initialCursor = formattedMessages.length > 0 ? formattedMessages[0].createdAt.toISOString() : null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
@@ -85,6 +90,8 @@ export default async function DMPage({ params }: { params: Promise<{ username: s
         currentUser={{ id: currentUser.id, username: currentUser.username, displayName: currentUser.displayName, avatarUrl: currentUser.avatarUrl }}
         targetUser={{ id: targetUser.id, username: targetUser.username, displayName: targetUser.displayName, avatarUrl: targetUser.avatarUrl }}
         initialMessages={formattedMessages}
+        initialHasMore={hasMore}
+        initialCursor={initialCursor}
       />
     </div>
   );

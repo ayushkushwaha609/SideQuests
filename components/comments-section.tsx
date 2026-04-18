@@ -21,19 +21,34 @@ export default function CommentsSection({ questId }: { questId: string }) {
   const [newComment, setNewComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchComments();
   }, [questId]);
 
-  async function fetchComments() {
-    setLoading(true);
-    const res = await fetch(`/api/quests/${questId}/comments`);
+  async function fetchComments(cursor?: string | null) {
+    const isInitial = !cursor;
+    if (isInitial) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
+    const params = new URLSearchParams();
+    if (cursor) params.set("cursor", cursor);
+    const res = await fetch(`/api/quests/${questId}/comments?${params.toString()}`);
     const data = await res.json();
-    setComments(data.comments ?? []);
+
+    setComments((prev) => (isInitial ? data.comments ?? [] : [...prev, ...(data.comments ?? [])]));
+    setHasMore(Boolean(data.hasMore));
+    setNextCursor(data.nextCursor ?? null);
+
     setLoading(false);
+    setLoadingMore(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -64,8 +79,6 @@ export default function CommentsSection({ questId }: { questId: string }) {
     if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
     return `${Math.floor(diff / 86400)}d`;
   }
-
-  const visibleComments = expanded ? comments : comments.slice(0, 3);
 
   return (
     <div style={{ marginTop: "var(--space-3)" }}>
@@ -109,7 +122,7 @@ export default function CommentsSection({ questId }: { questId: string }) {
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", marginTop: "var(--space-2)" }}>
-          {visibleComments.map((c) => (
+          {comments.map((c) => (
             <div
               key={c.id}
               style={{
@@ -158,20 +171,22 @@ export default function CommentsSection({ questId }: { questId: string }) {
             </div>
           ))}
 
-          {comments.length > 3 && !expanded && (
+          {hasMore && nextCursor && (
             <button
-              onClick={() => setExpanded(true)}
+              onClick={() => fetchComments(nextCursor)}
+              disabled={loadingMore}
               style={{
                 background: "none",
                 border: "none",
                 color: "var(--xp-purple-light)",
                 fontSize: "0.8rem",
-                cursor: "pointer",
+                cursor: loadingMore ? "default" : "pointer",
                 padding: "var(--space-1) 0",
                 textAlign: "left",
+                opacity: loadingMore ? 0.7 : 1,
               }}
             >
-              View all {comments.length} comments
+              {loadingMore ? "Loading more..." : "Load more comments"}
             </button>
           )}
         </div>

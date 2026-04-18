@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { comments, users } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, lt, and } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 
 // GET /api/quests/[id]/comments — list comments for a quest
@@ -10,6 +10,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: questId } = await params;
+  const { searchParams } = new URL(request.url);
+  const cursor = searchParams.get("cursor");
+  const limitParam = Number(searchParams.get("limit") ?? "10");
+  const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 50) : 10;
+  const cursorDate = cursor ? new Date(cursor) : null;
+  const hasValidCursor = cursorDate instanceof Date && !Number.isNaN(cursorDate.getTime());
 
   const rows = await db
     .select({
@@ -24,15 +30,24 @@ export async function GET(
     })
     .from(comments)
     .leftJoin(users, eq(comments.userId, users.id))
-    .where(eq(comments.questId, questId))
+    .where(and(
+      eq(comments.questId, questId),
+      hasValidCursor ? lt(comments.createdAt, cursorDate!) : undefined
+    ))
     .orderBy(desc(comments.createdAt))
-    .limit(50);
+    .limit(limit + 1);
+
+  const hasMore = rows.length > limit;
+  const pageRows = rows.slice(0, limit);
+  const nextCursor = hasMore ? pageRows[pageRows.length - 1]?.comment?.createdAt?.toISOString?.() ?? null : null;
 
   return NextResponse.json({
-    comments: rows.map((r) => ({
+    comments: pageRows.map((r) => ({
       ...r.comment,
       user: r.user,
     })),
+    nextCursor,
+    hasMore,
   });
 }
 

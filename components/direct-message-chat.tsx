@@ -25,17 +25,24 @@ export default function DirectMessageChat({
   currentUser,
   targetUser,
   initialMessages = [],
+  initialHasMore = false,
+  initialCursor = null,
 }: {
   chatId: string;
   currentUser: ChatUser;
   targetUser: ChatUser;
   initialMessages?: ChatMessage[];
+  initialHasMore?: boolean;
+  initialCursor?: string | null;
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [newMessage, setNewMessage] = useState("");
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [uploadKey, setUploadKey] = useState(0);
   const [sending, setSending] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [nextCursor, setNextCursor] = useState<string | null>(initialCursor);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,6 +102,30 @@ export default function DirectMessageChat({
     }
   }
 
+  async function loadOlderMessages() {
+    if (!hasMore || !nextCursor || loadingMore) return;
+
+    setLoadingMore(true);
+    try {
+      const params = new URLSearchParams({ chatId, cursor: nextCursor });
+      const res = await fetch(`/api/messages?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to load messages");
+      const data = await res.json();
+      const older = (data.messages ?? []).map((m: any) => ({
+        ...m,
+        createdAt: new Date(m.createdAt),
+      })).reverse();
+
+      setMessages((prev) => [...older, ...prev]);
+      setHasMore(Boolean(data.hasMore));
+      setNextCursor(data.nextCursor ?? null);
+    } catch (err: any) {
+      console.error("Error loading messages:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
   function formatTime(ts: Date | null) {
     if (!ts) return "";
     const d = new Date(ts);
@@ -131,6 +162,24 @@ export default function DirectMessageChat({
           gap: "var(--space-3)",
         }}
       >
+        {hasMore && (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <button
+              onClick={loadOlderMessages}
+              disabled={loadingMore}
+              style={{
+                background: "none",
+                border: "none",
+                color: "var(--xp-purple-light)",
+                fontSize: "0.75rem",
+                cursor: loadingMore ? "default" : "pointer",
+                opacity: loadingMore ? 0.7 : 1,
+              }}
+            >
+              {loadingMore ? "Loading..." : "Load earlier messages"}
+            </button>
+          </div>
+        )}
         {messages.length === 0 && (
           <div style={{ textAlign: "center", color: "var(--text-muted)", fontSize: "0.85rem", padding: "var(--space-6) 0", display: "flex", flexDirection: "column", gap: "var(--space-3)", alignItems: "center" }}>
             <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--bg-elevated)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
