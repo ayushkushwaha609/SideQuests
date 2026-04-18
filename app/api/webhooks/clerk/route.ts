@@ -77,5 +77,10 @@ export async function POST(request: Request) {
       .where(eq(users.clerkId, clerkId));
   }
 
+  if (evt.type === "user.deleted") {
+    const { id: clerkId } = evt.data;
+    await db.delete(users).where(eq(users.clerkId, clerkId));
+  }
+
   return NextResponse.json({ success: true });
 }
