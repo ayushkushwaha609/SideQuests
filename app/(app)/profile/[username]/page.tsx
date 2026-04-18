@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ArrowLeft, UserPlus, ShieldCheck, Star, Image as ImageIcon } from "lucide-react";
 import QuestCard from "@/components/quest-card";
 import ProfileChatButton from "@/components/profile-chat-button";
+import ShowcaseGrid from "@/components/showcase-grid";
 
 export default async function UserProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
@@ -137,28 +138,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
               <h2 style={{ fontSize: "0.9rem", fontWeight: "var(--weight-bold)", color: "var(--text-muted)", marginBottom: "var(--space-3)", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 6 }}>
                 <ImageIcon size={14} /> Showcase
               </h2>
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${Math.min(safeProfileImages.length, 3)}, 1fr)`,
-                gap: "var(--space-2)",
-                aspectRatio: safeProfileImages.length > 1 ? "auto" : "16/9",
-                height: safeProfileImages.length > 1 ? "120px" : "auto",
-              }}>
-                {safeProfileImages.map((img, i) => (
-                  <div key={i} style={{ 
-                    borderRadius: "var(--radius-md)", 
-                    overflow: "hidden",
-                    border: "1px solid var(--border)",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
-                  }}>
-                    <img 
-                      src={img} 
-                      alt={`Gallery attachment ${i}`} 
-                      style={{ width: "100%", height: "100%", objectFit: "cover" }} 
-                    />
-                  </div>
-                ))}
-              </div>
+              <ShowcaseGrid images={safeProfileImages} />
             </div>
           )}
 

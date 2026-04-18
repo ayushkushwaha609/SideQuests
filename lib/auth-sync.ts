@@ -7,22 +7,44 @@ export async function getUserOrCreate() {
   const { userId } = await auth();
   if (!userId) return null;
 
+  let clerkUser: Awaited<ReturnType<typeof currentUser>> = null;
+  try {
+    clerkUser = await currentUser();
+  } catch (error) {
+    const clerkError = error as { status?: number; clerkError?: boolean };
+    if (clerkError?.clerkError && clerkError?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
+
   let dbUser = await db.query.users.findFirst({
     where: eq(users.clerkId, userId),
   });
 
+  if (dbUser && clerkUser) {
+    const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
+    const username = clerkUser.username ?? email.split("@")[0].replace(/[^a-z0-9_]/gi, "_").toLowerCase() + Math.floor(Math.random() * 1000);
+    const fullName = (clerkUser.fullName || "").trim();
+    const fallbackName = [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ").trim();
+    const displayName = fullName || fallbackName || username;
+
+    const updates: Partial<typeof dbUser> = {};
+    if (clerkUser.imageUrl && clerkUser.imageUrl !== dbUser.avatarUrl) {
+      updates.avatarUrl = clerkUser.imageUrl;
+    }
+    if (displayName && displayName !== dbUser.displayName) {
+      updates.displayName = displayName;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await db.update(users).set(updates).where(eq(users.clerkId, userId));
+      dbUser = { ...dbUser, ...updates } as typeof dbUser;
+    }
+  }
+
   // Lazy sync if webhook failed or hasn't fired yet
   if (!dbUser) {
-    let clerkUser: Awaited<ReturnType<typeof currentUser>> = null;
-    try {
-      clerkUser = await currentUser();
-    } catch (error) {
-      const clerkError = error as { status?: number; clerkError?: boolean };
-      if (clerkError?.clerkError && clerkError?.status === 404) {
-        return null;
-      }
-      throw error;
-    }
     if (!clerkUser) return null;
 
     const email = clerkUser.emailAddresses[0]?.emailAddress ?? "";
