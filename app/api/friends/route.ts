@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users, friendships } from "@/db/schema";
-import { eq, and, or, ilike } from "drizzle-orm";
+import { eq, and, or, ilike, inArray } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 
 export async function GET() {
@@ -13,12 +13,22 @@ export async function GET() {
     .from(friendships)
     .where(or(eq(friendships.userId, user.id), eq(friendships.friendId, user.id)));
 
+  const otherIds = Array.from(new Set(
+    allFriendships.map((f) => (f.userId === user.id ? f.friendId : f.userId))
+  ));
+
+  const otherUsers = otherIds.length
+    ? await db.select().from(users).where(inArray(users.id, otherIds))
+    : [];
+
+  const usersById = new Map(otherUsers.map((u) => [u.id, u]));
+
   const friends: any[] = [];
   const pending: any[] = [];
 
   for (const f of allFriendships) {
     const otherId = f.userId === user.id ? f.friendId : f.userId;
-    const otherUser = await db.query.users.findFirst({ where: eq(users.id, otherId) });
+    const otherUser = usersById.get(otherId);
     if (!otherUser) continue;
 
     const entry = {

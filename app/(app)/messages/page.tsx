@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { users, friendships } from "@/db/schema";
-import { eq, or, and } from "drizzle-orm";
+import { eq, or, and, inArray } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import Link from "next/link";
 import { MessageSquare, ArrowLeft } from "lucide-react";
@@ -19,14 +19,13 @@ export default async function InboxPage() {
       )
     );
 
-  const friends = [];
-  for (const f of allFriendships) {
-    const friendId = f.userId === currentUser.id ? f.friendId : f.userId;
-    const friend = await db.query.users.findFirst({
-      where: eq(users.id, friendId),
-    });
-    if (friend) friends.push(friend);
-  }
+  const friendIds = Array.from(new Set(
+    allFriendships.map((f) => (f.userId === currentUser.id ? f.friendId : f.userId))
+  ));
+
+  const friends = friendIds.length
+    ? await db.select().from(users).where(inArray(users.id, friendIds))
+    : [];
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>

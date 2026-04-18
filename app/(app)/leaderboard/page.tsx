@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { users, friendships, achievements } from "@/db/schema";
-import { eq, and, or } from "drizzle-orm";
+import { eq, and, or, inArray } from "drizzle-orm";
 import Link from "next/link";
 import { Trophy, Zap, Flame } from "lucide-react";
 
@@ -35,18 +35,12 @@ export default async function LeaderboardPage() {
   const friendIds = friendRows.map((f) => f.userId === currentUser.id ? f.friendId : f.userId);
   const allIds = [currentUser.id, ...friendIds];
 
-  // Get all users in network
-  const leaderboardUsers = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, allIds[0])); // simplified — will refetch all below
-
-  // Fetch each user
-  const allUsers = await Promise.all(allIds.map(id => db.query.users.findFirst({ where: eq(users.id, id) })));
-  const validUsers = allUsers.filter(Boolean) as typeof currentUser[];
+  const allUsers = allIds.length
+    ? await db.select().from(users).where(inArray(users.id, allIds))
+    : [];
 
   // Sort by XP desc
-  const ranked = validUsers.sort((a, b) => b.xp - a.xp);
+  const ranked = allUsers.sort((a, b) => b.xp - a.xp);
 
   // My achievements
   const myAchievements = await db
