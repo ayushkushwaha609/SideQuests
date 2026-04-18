@@ -1,7 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { users, sidequests, friendships, activities } from "@/db/schema";
-import { eq, and, or, desc, inArray, ne } from "drizzle-orm";
+import { eq, and, or, desc, inArray, ne, lt } from "drizzle-orm";
 import Link from "next/link";
 import { CheckCircle2, Star, Users, Zap, UserPlus } from "lucide-react";
 import { getUserOrCreate } from "@/lib/auth-sync";
@@ -16,12 +16,16 @@ function timeAgo(date: Date): string {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
-export default async function HomePage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ tab?: string; cursor?: string }> }) {
   const user = await getUserOrCreate();
   if (!user) return <div className="p-4 text-center">Loading profile...</div>;
 
   const sp = await searchParams;
   const activeTab = sp.tab === "public" ? "public" : "friends";
+  const cursor = sp.cursor ? new Date(sp.cursor) : null;
+  const hasValidCursor = cursor instanceof Date && !Number.isNaN(cursor.getTime());
+  const pageSizeFriends = 20;
+  const pageSizePublic = 30;
 
   // Shared Data: Get friend relationships
   const allFriendships = await db
@@ -42,6 +46,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // TAB: FRIENDS ACTIVITY
   // -----------------------------------------------------
   let recentActivity: any[] = [];
+  let friendsHasMore = false;
+  let friendsNextCursor: string | null = null;
   if (activeTab === "friends" && acceptedFriendIds.length > 0) {
     // Only friends, NOT self. Also join quest details for completions
     const acts = await db
@@ -53,16 +59,26 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       .from(activities)
       .leftJoin(sidequests, eq(activities.questId, sidequests.id))
       .leftJoin(users, eq(activities.userId, users.id))
-      .where(inArray(activities.userId, acceptedFriendIds))
+      .where(and(
+        inArray(activities.userId, acceptedFriendIds),
+        hasValidCursor ? lt(activities.createdAt, cursor!) : undefined
+      ))
       .orderBy(desc(activities.createdAt))
-      .limit(20);
-    recentActivity = acts;
+      .limit(pageSizeFriends + 1);
+
+    friendsHasMore = acts.length > pageSizeFriends;
+    recentActivity = acts.slice(0, pageSizeFriends);
+    if (friendsHasMore && recentActivity.length > 0) {
+      friendsNextCursor = recentActivity[recentActivity.length - 1].activity.createdAt.toISOString();
+    }
   }
 
   // -----------------------------------------------------
   // TAB: PUBLIC FEED
   // -----------------------------------------------------
   let publicQuests: any[] = [];
+  let publicHasMore = false;
+  let publicNextCursor: string | null = null;
   if (activeTab === "public") {
     publicQuests = await db
       .select({
@@ -71,9 +87,19 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       })
       .from(sidequests)
       .leftJoin(users, eq(sidequests.createdBy, users.id))
-      .where(and(eq(sidequests.visibility, "public"), eq(sidequests.status, "active")))
+      .where(and(
+        eq(sidequests.visibility, "public"),
+        eq(sidequests.status, "active"),
+        hasValidCursor ? lt(sidequests.createdAt, cursor!) : undefined
+      ))
       .orderBy(desc(sidequests.createdAt))
-      .limit(30);
+      .limit(pageSizePublic + 1);
+
+    publicHasMore = publicQuests.length > pageSizePublic;
+    publicQuests = publicQuests.slice(0, pageSizePublic);
+    if (publicHasMore && publicQuests.length > 0) {
+      publicNextCursor = publicQuests[publicQuests.length - 1].quest.createdAt.toISOString();
+    }
   }
 
   return (
@@ -193,6 +219,16 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               })}
             </div>
           )}
+          {friendsHasMore && friendsNextCursor && (
+            <div style={{ marginTop: "var(--space-3)", display: "flex", justifyContent: "center" }}>
+              <Link
+                href={`/?tab=friends&cursor=${encodeURIComponent(friendsNextCursor)}`}
+                className="btn btn-secondary btn-sm"
+              >
+                Load more
+              </Link>
+            </div>
+          )}
         </section>
       )}
 
@@ -262,6 +298,16 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                   </div>
                 );
               })}
+            </div>
+          )}
+          {publicHasMore && publicNextCursor && (
+            <div style={{ marginTop: "var(--space-3)", display: "flex", justifyContent: "center" }}>
+              <Link
+                href={`/?tab=public&cursor=${encodeURIComponent(publicNextCursor)}`}
+                className="btn btn-secondary btn-sm"
+              >
+                Load more
+              </Link>
             </div>
           )}
         </section>
