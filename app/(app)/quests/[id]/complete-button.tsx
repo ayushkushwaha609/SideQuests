@@ -18,19 +18,25 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
   const [note, setNote] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [showProofForm, setShowProofForm] = useState(false);
+  const [showSharePrompt, setShowSharePrompt] = useState(false);
   const router = useRouter();
 
-  async function handleComplete() {
+  async function handleComplete(share: boolean) {
     if (completed || loading) return;
     setLoading(true);
     const res = await fetch(`/api/quests/${questId}/complete`, { 
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ note: note.trim() || undefined, imageUrl: imageUrl || undefined })
+      body: JSON.stringify({
+        note: note.trim() || undefined,
+        imageUrl: imageUrl || undefined,
+        share,
+      })
     });
     if (res.ok) {
       setCompleted(true);
       setShowXp(true);
+      setShowSharePrompt(false);
       confetti({
         particleCount: 100,
         spread: 70,
@@ -40,6 +46,11 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
       setTimeout(() => { setShowXp(false); router.refresh(); }, 2000);
     }
     setLoading(false);
+  }
+
+  function handleSharePrompt() {
+    if (completed || loading) return;
+    setShowSharePrompt(true);
   }
 
   return (
@@ -74,7 +85,7 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
       )}
 
       <button
-        onClick={handleComplete}
+        onClick={handleSharePrompt}
         disabled={completed || loading}
         className={`btn btn-lg ${completed ? "btn-secondary" : "btn-primary"}`}
         style={{
@@ -95,6 +106,40 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
           <><Circle size={20} /> Mark Complete</>
         )}
       </button>
+
+      {!completed && showSharePrompt && (
+        <div style={{
+          background: "var(--bg-elevated)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-lg)",
+          padding: "var(--space-3)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--space-3)",
+        }}>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>
+            Share this achievement?
+          </div>
+          <div style={{ display: "flex", gap: "var(--space-2)" }}>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => handleComplete(true)}
+              disabled={loading}
+            >
+              Share & Complete
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              onClick={() => handleComplete(false)}
+              disabled={loading}
+            >
+              Complete Privately
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* XP gain animation */}
       {showXp && (

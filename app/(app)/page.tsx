@@ -78,29 +78,31 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // -----------------------------------------------------
   // TAB: PUBLIC FEED
   // -----------------------------------------------------
-  let publicQuests: any[] = [];
+  let publicActivity: any[] = [];
   let publicHasMore = false;
   let publicNextCursor: string | null = null;
   if (activeTab === "public") {
-    publicQuests = await db
+    const acts = await db
       .select({
+        activity: activities,
         quest: sidequests,
-        creator: users,
+        actor: users,
       })
-      .from(sidequests)
-      .leftJoin(users, eq(sidequests.createdBy, users.id))
+      .from(activities)
+      .leftJoin(sidequests, eq(activities.questId, sidequests.id))
+      .leftJoin(users, eq(activities.userId, users.id))
       .where(and(
-        eq(sidequests.visibility, "public"),
-        eq(sidequests.status, "active"),
-        hasValidCursor ? lt(sidequests.createdAt, cursor!) : undefined
+        eq(activities.isPublic, true),
+        eq(activities.type, "quest_completed"),
+        hasValidCursor ? lt(activities.createdAt, cursor!) : undefined
       ))
-      .orderBy(desc(sidequests.createdAt))
+      .orderBy(desc(activities.createdAt))
       .limit(pageSizePublic + 1);
 
-    publicHasMore = publicQuests.length > pageSizePublic;
-    publicQuests = publicQuests.slice(0, pageSizePublic);
-    if (publicHasMore && publicQuests.length > 0) {
-      publicNextCursor = publicQuests[publicQuests.length - 1].quest.createdAt.toISOString();
+    publicHasMore = acts.length > pageSizePublic;
+    publicActivity = acts.slice(0, pageSizePublic);
+    if (publicHasMore && publicActivity.length > 0) {
+      publicNextCursor = publicActivity[publicActivity.length - 1].activity.createdAt.toISOString();
     }
   }
 
@@ -283,66 +285,60 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {/* PUBLIC TAB CONTENT */}
       {activeTab === "public" && (
         <section>
-          {publicQuests.length === 0 ? (
+          {publicActivity.length === 0 ? (
             <div className="seamless-item" style={{ textAlign: "center", padding: "var(--space-6)" }}>
-              <p>The global arcade is quiet right now. Check back soon for fresh quests.</p>
+              <p>The global arcade is quiet right now. Check back soon for shared wins.</p>
             </div>
           ) : (
             <div className="seamless-stack">
-              {publicQuests.map(({ quest, creator }) => {
-                if (!creator) return null;
-                const creatorName = creator.displayName ?? creator.username;
-                const isMyQuest = creator.id === user.id;
-                const isConnected = allConnectedIds.includes(creator.id);
-                
+              {publicActivity.map(({ activity, quest, actor }) => {
+                if (!actor) return null;
+                const actorName = actor.displayName ?? actor.username;
                 return (
-                  <div key={quest.id} className="seamless-item animate-slide-up stagger-item">
-                    {/* User Info */}
-                    <div className="flex items-center justify-between" style={{ marginBottom: "var(--space-3)" }}>
-                      <Link href={`/profile/${creator.username}`} style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                        <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--bg-elevated)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                          {creator.avatarUrl ? <img src={creator.avatarUrl} alt={creator.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>👤</span>}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: "var(--weight-bold)", color: "var(--text-primary)", fontSize: "0.875rem" }}>{creatorName}</div>
-                          <div style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>Level {creator.level} · {timeAgo(quest.createdAt)}</div>
+                  <div key={activity.id} className="seamless-item animate-slide-up stagger-item">
+                    <div className="flex items-center gap-1" style={{ gap: "var(--space-3)", marginBottom: "var(--space-3)" }}>
+                      <Link href={`/profile/${actor.username}`} style={{ textDecoration: "none" }}>
+                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--bg-elevated)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                          {actor.avatarUrl ? <img src={actor.avatarUrl} alt={actor.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>👤</span>}
                         </div>
                       </Link>
-
-                      {/* Quick Add Friend Button */}
-                      {!isMyQuest && !isConnected && (
-                        <Link href="/friends" className="btn btn-secondary btn-sm" style={{ padding: "4px 8px" }}>
-                          <UserPlus size={14} /> <span style={{ fontSize: "0.75rem" }}>Add</span>
-                        </Link>
-                      )}
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: "0.875rem", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                          <Link href={`/profile/${actor.username}`} style={{ fontWeight: "var(--weight-bold)", color: "var(--text-primary)", textDecoration: "none" }}>
+                            {actorName}
+                          </Link>
+                          <span style={{ color: "var(--text-secondary)" }}>shared a quest win ⚔️</span>
+                        </div>
+                        <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 2 }}>{timeAgo(activity.createdAt)}</div>
+                      </div>
                     </div>
 
-                    {/* Quest Block */}
+                    {quest && (
                       <Link href={`/quests/${quest.id}`} className="quest-tile-link">
-                        <div className="quest-tile quest-tile-compact" style={{ display: "flex", gap: "var(--space-3)" }}>
-                        <span style={{ fontSize: "1.5rem" }}>{quest.coverEmoji}</span>
-                        <div>
-                          <div style={{ fontWeight: "var(--weight-semibold)", color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                            {quest.title}
-                          </div>
-                          {quest.description && (
-                            <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                              {quest.description}
+                        <div className="quest-tile quest-tile-compact" style={{ display: "flex", gap: "var(--space-3)", marginTop: "var(--space-2)" }}>
+                          <span style={{ fontSize: "1.5rem" }}>{quest.coverEmoji}</span>
+                          <div>
+                            <div style={{ fontWeight: "var(--weight-semibold)", color: "var(--text-primary)", fontSize: "0.95rem" }}>
+                              {quest.title}
                             </div>
-                          )}
-                          <div className="flex items-center gap-1" style={{ gap: "var(--space-2)", marginTop: 6 }}>
-                            <span className={`badge badge-${quest.recurrence}`}>{quest.recurrence}</span>
-                            <span style={{ color: "var(--xp-purple-light)", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 3 }}>
-                              <Zap size={11} fill="var(--xp-purple-light)" color="var(--xp-purple-light)" />
-                              {quest.xpReward} XP
-                            </span>
+                            {quest.description && (
+                              <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                {quest.description}
+                              </div>
+                            )}
+                            <div className="flex items-center gap-1" style={{ gap: "var(--space-2)", marginTop: 6 }}>
+                              <span className={`badge badge-${quest.recurrence}`}>{quest.recurrence}</span>
+                              <span style={{ color: "var(--xp-purple-light)", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 3 }}>
+                                <Zap size={11} fill="var(--xp-purple-light)" color="var(--xp-purple-light)" />
+                                {quest.xpReward} XP
+                              </span>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Link>
+                      </Link>
+                    )}
 
-                    {/* Comments */}
-                    <CommentsSection questId={quest.id} />
+                    {quest && <CommentsSection questId={quest.id} />}
                   </div>
                 );
               })}

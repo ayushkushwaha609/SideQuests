@@ -60,6 +60,7 @@ export async function POST(
   }
 
   const body = await request.json().catch(() => ({}));
+  const shouldShare = body.share === true;
 
   // Record completion
   await db.insert(questCompletions).values({
@@ -117,13 +118,14 @@ export async function POST(
     lastActiveAt: now
   }).where(eq(users.id, user.id));
 
-  // Log activity
-  await db.insert(activities).values({
-    userId: user.id,
-    type: "quest_completed",
-    questId: quest.id,
-    isPublic: true,
-  });
+  if (shouldShare && quest.recurrence !== "daily") {
+    await db.insert(activities).values({
+      userId: user.id,
+      type: "quest_completed",
+      questId: quest.id,
+      isPublic: quest.visibility === "public",
+    });
+  }
 
   // Check achievements
   const completionsCount = await db.select({ count: count() }).from(questCompletions).where(eq(questCompletions.userId, user.id));
