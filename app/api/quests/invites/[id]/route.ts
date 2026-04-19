@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { questMembers } from "@/db/schema";
+import { questMembers, sidequests } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
+import { sendPushToUser } from "@/lib/push";
 
 export async function PATCH(
   request: Request,
@@ -23,6 +24,18 @@ export async function PATCH(
 
   if (!updated) {
     return NextResponse.json({ error: "Invite not found" }, { status: 404 });
+  }
+
+  const quest = await db.query.sidequests.findFirst({
+    where: eq(sidequests.id, updated.questId),
+  });
+
+  if (quest && quest.createdBy !== user.id) {
+    await sendPushToUser(quest.createdBy, {
+      title: "Quest invite response",
+      body: `${user.displayName ?? user.username ?? "Someone"} ${accept ? "accepted" : "declined"} your invite to ${quest.title}.`,
+      url: `/quests/${quest.id}/invite`,
+    });
   }
 
   return NextResponse.json({ status: updated.inviteStatus });

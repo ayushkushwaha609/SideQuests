@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { friendships, questMembers, sidequests } from "@/db/schema";
+import { friendships, questMembers, sidequests, users } from "@/db/schema";
 import { and, eq, or } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
+import { sendPushToUser } from "@/lib/push";
 
 export async function POST(
   request: Request,
@@ -58,6 +59,13 @@ export async function POST(
     userId: friendId,
     role: "member",
     inviteStatus: "pending",
+  });
+
+  const inviter = await db.query.users.findFirst({ where: eq(users.id, user.id) });
+  await sendPushToUser(friendId, {
+    title: "Quest invite",
+    body: `${inviter?.displayName ?? inviter?.username ?? "Someone"} invited you to ${quest.title}.`,
+    url: `/quests/${quest.id}/invite`,
   });
 
   return NextResponse.json({ status: "pending" }, { status: 201 });
