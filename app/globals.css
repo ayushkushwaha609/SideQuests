@@ -819,6 +819,28 @@ textarea.input { resize: vertical; min-height: 100px; }
 }
 
 /* ===========================
+   PWA INSTALL PROMPT
+   =========================== */
+.pwa-prompt {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--bottom-nav-height) + var(--space-3));
+  width: calc(100% - var(--space-6));
+  max-width: var(--max-width);
+  background: var(--bg-surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  box-shadow: var(--shadow-card);
+  z-index: 120;
+}
+
+/* ===========================
    UTILITIES
    =========================== */
 .flex { display: flex; }

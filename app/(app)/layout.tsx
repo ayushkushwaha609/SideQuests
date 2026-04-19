@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import AppHeader from "@/components/app-header";
 import BottomNav from "@/components/bottom-nav";
+import PwaInstallPrompt from "@/components/pwa-install-prompt";
 import { db } from "@/db";
 import { friendships, directMessages } from "@/db/schema";
 import { and, eq, ilike, ne, isNull, sql } from "drizzle-orm";
@@ -38,6 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         unreadMessages={unreadCount}
       />
       <main className="page-content">{children}</main>
+      <PwaInstallPrompt />
       <BottomNav pendingRequests={pendingCount} />
     </div>
   );
