@@ -1,10 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { users, sidequests, friendships, activities } from "@/db/schema";
+import { users, sidequests, friendships, activities, feedClears } from "@/db/schema";
 import { eq, and, or, desc, inArray, ne, lt, gte } from "drizzle-orm";
 import Link from "next/link";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import ActivityCard from "@/components/activity-card";
+import ClearFeedButton from "@/components/clear-feed-button";
 
 function timeAgo(date: Date): string {
   const now = new Date();
@@ -26,6 +27,15 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const pageSizeFriends = 20;
   const pageSizePublic = 30;
   const sharedCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const feedClearRows = await db
+    .select()
+    .from(feedClears)
+    .where(eq(feedClears.userId, user.id));
+
+  const feedClearMap = new Map(feedClearRows.map((row) => [row.feedType, row.clearedAt]));
+  const friendsClearedAt = feedClearMap.get("friends");
+  const publicClearedAt = feedClearMap.get("public");
 
   // Shared Data: Get friend relationships
   const allFriendships = await db
@@ -67,6 +77,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
           ne(activities.type, "quest_completed"),
           gte(activities.createdAt, sharedCutoff)
         ),
+        friendsClearedAt ? gte(activities.createdAt, friendsClearedAt) : undefined,
         hasValidCursor ? lt(activities.createdAt, cursor!) : undefined
       ))
       .orderBy(desc(activities.createdAt))
@@ -99,6 +110,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         eq(activities.isPublic, true),
         eq(activities.type, "quest_completed"),
         gte(activities.createdAt, sharedCutoff),
+        publicClearedAt ? gte(activities.createdAt, publicClearedAt) : undefined,
         hasValidCursor ? lt(activities.createdAt, cursor!) : undefined
       ))
       .orderBy(desc(activities.createdAt))
@@ -190,6 +202,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {/* FRIENDS TAB CONTENT */}
       {activeTab === "friends" && (
         <section>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-3)" }}>
+            <h2 style={{ fontSize: "1rem", fontWeight: "var(--weight-semibold)" }}>Party Feed</h2>
+            <ClearFeedButton tab="friends" />
+          </div>
           {recentActivity.length === 0 ? (
             <div className="seamless-item" style={{ textAlign: "center", padding: "var(--space-6)" }}>
               <div style={{ fontSize: "2rem", marginBottom: "var(--space-3)" }}>👥</div>
@@ -235,6 +251,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {/* PUBLIC TAB CONTENT */}
       {activeTab === "public" && (
         <section>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "var(--space-3)" }}>
+            <h2 style={{ fontSize: "1rem", fontWeight: "var(--weight-semibold)" }}>Global Arcade</h2>
+            <ClearFeedButton tab="public" />
+          </div>
           {publicActivity.length === 0 ? (
             <div className="seamless-item" style={{ textAlign: "center", padding: "var(--space-6)" }}>
               <p>The global arcade is quiet right now. Check back soon for shared wins.</p>

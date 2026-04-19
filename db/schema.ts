@@ -7,6 +7,7 @@ import {
   boolean,
   uuid,
   jsonb,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // Enums
@@ -64,6 +65,8 @@ export const questArtifactTypeEnum = pgEnum("quest_artifact_type", [
   "upload",
   "chat",
 ]);
+
+export const feedTypeEnum = pgEnum("feed_type", ["friends", "public"]);
 
 // Users table (synced from Clerk via webhook)
 export const users = pgTable("users", {
@@ -166,6 +169,22 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const feedClears = pgTable(
+  "feed_clears",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    feedType: feedTypeEnum("feed_type").notNull(),
+    clearedAt: timestamp("cleared_at").defaultNow().notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueUserFeed: uniqueIndex("feed_clears_user_feed_unique").on(table.userId, table.feedType),
+  })
+);
+
 // Comments on quests (visible in feed and quest detail)
 export const comments = pgTable("comments", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -241,5 +260,6 @@ export type QuestCompletion = typeof questCompletions.$inferSelect;
 export type Friendship = typeof friendships.$inferSelect;
 export type Achievement = typeof achievements.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
+export type FeedClear = typeof feedClears.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type QuestArtifact = typeof questArtifacts.$inferSelect;
