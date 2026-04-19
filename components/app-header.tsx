@@ -8,9 +8,11 @@ interface AppHeaderProps {
   xp?: number;
   level?: number;
   streak?: number;
+  unreadMessages?: number;
 }
 
-export default function AppHeader({ xp = 0, level = 1, streak = 0 }: AppHeaderProps) {
+export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessages = 0 }: AppHeaderProps) {
+    const unreadLabel = unreadMessages > 9 ? "9+" : String(unreadMessages);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [mounted, setMounted] = useState(false);
   const xpForCurrentLevel = (level - 1) * 100;
@@ -69,8 +71,16 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0 }: AppHeaderPr
             <div className="xp-bar-fill" style={{ width: `${fillPercent}%` }} />
           </div>
         </div>
-        <Link href="/messages" style={{ color: "var(--text-muted)" }}>
+        <Link
+          href="/messages"
+          className="icon-badge"
+          style={{ color: "var(--text-muted)" }}
+          aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : "Messages"}
+        >
           <MessageCircle size={20} />
+          {unreadMessages > 0 && (
+            <span className="badge-pill" aria-hidden="true">{unreadLabel}</span>
+          )}
         </Link>
         <button
           type="button"

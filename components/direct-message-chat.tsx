@@ -44,6 +44,8 @@ export default function DirectMessageChat({
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [nextCursor, setNextCursor] = useState<string | null>(initialCursor);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const lastReadId = useRef<string | null>(null);
+  const markingRead = useRef(false);
 
   useEffect(() => {
     // Subscribe to Pusher channel for this chat
@@ -71,6 +73,35 @@ export default function DirectMessageChat({
       pusherClient.unsubscribe(`chat-${chatId}`);
     };
   }, [chatId]);
+
+  useEffect(() => {
+    markChatRead();
+  }, [chatId]);
+
+  useEffect(() => {
+    const latest = messages[messages.length - 1];
+    if (!latest) return;
+    if (latest.userId === currentUser.id) return;
+    if (lastReadId.current === latest.id) return;
+    markChatRead(latest.id);
+  }, [messages, chatId, currentUser.id]);
+
+  async function markChatRead(latestId?: string) {
+    if (markingRead.current) return;
+    markingRead.current = true;
+    try {
+      await fetch("/api/messages/read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatId }),
+      });
+      if (latestId) lastReadId.current = latestId;
+    } catch (err) {
+      console.error("Error marking messages read:", err);
+    } finally {
+      markingRead.current = false;
+    }
+  }
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();

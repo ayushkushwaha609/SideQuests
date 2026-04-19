@@ -179,6 +179,7 @@ export const directMessages = pgTable("direct_messages", {
     .references(() => users.id, { onDelete: "cascade" }),
   text: text("text").notNull(),
   imageUrl: text("image_url"),
+  readAt: timestamp("read_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

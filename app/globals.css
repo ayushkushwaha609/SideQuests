@@ -790,6 +790,35 @@ textarea.input { resize: vertical; min-height: 100px; }
 }
 
 /* ===========================
+   INDICATORS
+   =========================== */
+.icon-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge-pill {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--streak-amber);
+  color: var(--text-inverse);
+  font-size: 0.6rem;
+  font-weight: var(--weight-bold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg-surface);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.08);
+}
+
+/* ===========================
    UTILITIES
    =========================== */
 .flex { display: flex; }
