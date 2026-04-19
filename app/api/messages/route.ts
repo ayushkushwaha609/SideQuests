@@ -6,7 +6,6 @@ import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { eq, and, lt, desc } from "drizzle-orm";
 import { sendPushToUser } from "@/lib/push";
-import { pusherServer } from "@/lib/pusher";
 
 export async function GET(req: Request) {
   try {
