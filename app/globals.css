@@ -462,6 +462,10 @@ p {
   border: none;
 }
 
+.nav-messages {
+  display: none;
+}
+
 .nav-item:hover { color: var(--text-secondary); }
 .nav-item.active { color: var(--xp-purple-light); }
 .nav-item.active svg { filter: drop-shadow(0 0 6px var(--xp-purple)); }
@@ -497,12 +501,12 @@ p {
 .app-menu-button {
   display: none;
   background: transparent;
-  border: 1px solid var(--border);
+  border: none;
   box-shadow: none;
 }
 
 .app-menu-button:hover {
-  background: var(--bg-elevated);
+  background: transparent;
 }
 
 .app-message {
@@ -922,7 +926,15 @@ textarea.input { resize: vertical; min-height: 100px; }
   }
 
   .app-message {
-    display: inline-flex;
+    display: none;
+  }
+
+  .nav-messages {
+    display: flex;
+  }
+
+  .nav-me {
+    display: none;
   }
 }
 

@@ -40,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       />
       <main className="page-content">{children}</main>
       <PwaInstallPrompt />
-      <BottomNav pendingRequests={pendingCount} />
+      <BottomNav pendingRequests={pendingCount} unreadMessages={unreadCount} />
     </div>
   );
 }
