@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { users, friendships } from "@/db/schema";
-import { ilike, or, sql, and, inArray, eq } from "drizzle-orm";
+import { users } from "@/db/schema";
+import { ilike, or, sql } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 
 export async function GET(request: Request) {
@@ -36,37 +36,5 @@ export async function GET(request: Request) {
   // Exclude self
   const filtered = results.filter((u) => u.id !== user.id);
 
-  const resultIds = filtered.map((u) => u.id);
-  const relations = resultIds.length
-    ? await db
-        .select()
-        .from(friendships)
-        .where(and(
-          or(eq(friendships.userId, user.id), eq(friendships.friendId, user.id)),
-          or(inArray(friendships.userId, resultIds), inArray(friendships.friendId, resultIds))
-        ))
-    : [];
-
-  const statusByUserId = new Map<string, { status: "pending" | "accepted"; role: "sender" | "receiver" }>();
-  for (const f of relations) {
-    const otherId = f.userId === user.id ? f.friendId : f.userId;
-    statusByUserId.set(otherId, {
-      status: f.status,
-      role: f.userId === user.id ? "sender" : "receiver",
-    });
-  }
-
-  const withStatus = filtered.map((u) => {
-    const rel = statusByUserId.get(u.id);
-    return {
-      ...u,
-      status: rel?.status,
-      role: rel?.role,
-    };
-  });
-
-  return NextResponse.json(
-    { users: withStatus },
-    { headers: { "Cache-Control": "no-store" } }
-  );
+  return NextResponse.json({ users: filtered });
 }
