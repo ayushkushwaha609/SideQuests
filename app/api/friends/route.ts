@@ -69,7 +69,19 @@ export async function POST(request: Request) {
       and(eq(friendships.userId, friendId), eq(friendships.friendId, user.id))
     ),
   });
-  if (existing) return NextResponse.json({ error: "Already friends or pending" }, { status: 409 });
+  if (existing) {
+    if (existing.status === "pending" && existing.friendId === user.id) {
+      const [friendship] = await db
+        .update(friendships)
+        .set({ status: "accepted" })
+        .where(eq(friendships.id, existing.id))
+        .returning();
+
+      return NextResponse.json({ friendship, autoAccepted: true }, { status: 200 });
+    }
+
+    return NextResponse.json({ error: "Already friends or pending" }, { status: 409 });
+  }
 
   const [friendship] = await db
     .insert(friendships)
