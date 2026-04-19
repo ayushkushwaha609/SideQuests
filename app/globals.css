@@ -1,62 +1,70 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 /* ===========================
-   DESIGN TOKENS (Extended Figma × SideQuest Dark)
+   DESIGN TOKENS (Chill 8-bit × Pinterest warmth)
    =========================== */
 :root {
-  /* Base palette — Figma's black/white core */
+  color-scheme: dark;
+
+  /* Base palette */
   --black: #000000;
   --white: #ffffff;
 
   /* Dark theme backgrounds */
-  --bg-base: #080d18;
-  --bg-surface: #0f1629;
-  --bg-elevated: #1a2340;
-  --bg-card: #1e2a3d;
-  --bg-overlay: rgba(8, 13, 24, 0.85);
+  --bg-base: #0a0f1a;
+  --bg-surface: #121a2a;
+  --bg-elevated: #1a2438;
+  --bg-card: #1b2434;
+  --bg-overlay: rgba(10, 15, 26, 0.85);
 
-  /* Gamification accent colors */
-  --xp-purple: #8b5cf6;
-  --xp-purple-light: #a78bfa;
-  --xp-purple-glow: rgba(139, 92, 246, 0.25);
+  /* Background texture layers */
+  --bg-grid: rgba(148, 163, 184, 0.08);
+  --bg-glow-1: rgba(45, 212, 191, 0.18);
+  --bg-glow-2: rgba(96, 165, 250, 0.14);
+
+  /* Gamification accents (mint + sky, no purple bias) */
+  --xp-purple: #2dd4bf;
+  --xp-purple-light: #5eead4;
+  --xp-purple-glow: rgba(45, 212, 191, 0.25);
   --streak-amber: #f59e0b;
   --streak-amber-light: #fbbf24;
   --streak-amber-glow: rgba(245, 158, 11, 0.25);
-  --quest-blue: #3b82f6;
-  --quest-blue-light: #60a5fa;
-  --quest-blue-glow: rgba(59, 130, 246, 0.2);
+  --quest-blue: #60a5fa;
+  --quest-blue-light: #93c5fd;
+  --quest-blue-glow: rgba(96, 165, 250, 0.2);
 
   /* Semantic states */
-  --success: #10b981;
-  --success-light: #34d399;
-  --success-glow: rgba(16, 185, 129, 0.2);
+  --success: #22c55e;
+  --success-light: #4ade80;
+  --success-glow: rgba(34, 197, 94, 0.2);
   --warning: #f59e0b;
   --error: #ef4444;
   --error-light: #f87171;
 
   /* Text */
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
-  --text-inverse: #0f1629;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-inverse: #0f172a;
 
   /* Borders */
-  --border: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(139, 92, 246, 0.5);
+  --border: rgba(148, 163, 184, 0.18);
+  --border-active: rgba(45, 212, 191, 0.6);
 
-  /* Typography — Inter variable font (Figma-inspired) */
-  --font-sans: "Inter", "SF Pro Display", system-ui, helvetica, sans-serif;
+  /* Typography */
+  --font-display: "Press Start 2P", "Space Grotesk", system-ui, sans-serif;
+  --font-sans: "Space Grotesk", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", menlo, monospace;
 
-  /* Variable font weight stops (Figma's unusual system) */
-  --weight-thin: 320;
-  --weight-light: 340;
+  /* Variable font weight stops */
+  --weight-thin: 300;
+  --weight-light: 350;
   --weight-regular: 400;
-  --weight-medium: 480;
-  --weight-semibold: 540;
+  --weight-medium: 500;
+  --weight-semibold: 600;
   --weight-bold: 700;
 
-  /* Spacing scale (8px base — Figma) */
+  /* Spacing scale (8px base) */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -68,19 +76,20 @@
   --space-12: 48px;
   --space-16: 64px;
 
-  /* Border radius — Figma's pill/circle system */
+  /* Border radius */
   --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-pill: 50px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
   --radius-circle: 50%;
 
   /* Shadows */
-  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
-  --shadow-glow-purple: 0 0 20px rgba(139, 92, 246, 0.3);
+  --shadow-card: 0 10px 24px rgba(2, 6, 23, 0.35);
+  --shadow-glow-purple: 0 0 18px rgba(45, 212, 191, 0.3);
   --shadow-glow-amber: 0 0 20px rgba(245, 158, 11, 0.3);
-  --shadow-glow-blue: 0 0 20px rgba(59, 130, 246, 0.25);
+  --shadow-glow-blue: 0 0 20px rgba(96, 165, 250, 0.25);
+  --shadow-crisp: 0 0 0 2px rgba(15, 23, 42, 0.6), 0 8px 0 rgba(2, 6, 23, 0.5);
 
   /* Transitions */
   --transition-fast: 150ms ease;
@@ -91,6 +100,31 @@
   --bottom-nav-height: 68px;
   --header-height: 64px;
   --max-width: 480px; /* mobile-first max width */
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-base: #f6f6f3;
+  --bg-surface: #ffffff;
+  --bg-elevated: #efece6;
+  --bg-card: #ffffff;
+  --bg-overlay: rgba(246, 246, 243, 0.9);
+
+  --bg-grid: rgba(33, 25, 34, 0.08);
+  --bg-glow-1: rgba(230, 0, 35, 0.12);
+  --bg-glow-2: rgba(245, 158, 11, 0.16);
+
+  --text-primary: #211922;
+  --text-secondary: #62625b;
+  --text-muted: #91918c;
+  --text-inverse: #0f172a;
+
+  --border: rgba(33, 25, 34, 0.1);
+  --border-active: rgba(230, 0, 35, 0.5);
+
+  --shadow-card: 0 10px 24px rgba(33, 25, 34, 0.12);
+  --shadow-crisp: 0 0 0 2px rgba(33, 25, 34, 0.18), 0 8px 0 rgba(33, 25, 34, 0.12);
 }
 
 /* ===========================
@@ -112,9 +146,16 @@ body {
   font-family: var(--font-sans);
   font-weight: var(--weight-regular);
   background-color: var(--bg-base);
+  background-image:
+    radial-gradient(120% 100% at 8% 0%, var(--bg-glow-1), transparent 55%),
+    radial-gradient(120% 100% at 92% 0%, var(--bg-glow-2), transparent 55%),
+    linear-gradient(transparent 92%, var(--bg-grid) 92%),
+    linear-gradient(90deg, transparent 92%, var(--bg-grid) 92%);
+  background-size: auto, auto, 20px 20px, 20px 20px;
+  background-position: center, center, 0 0, 0 0;
   color: var(--text-primary);
   line-height: 1.5;
-  letter-spacing: -0.014em;
+  letter-spacing: -0.01em;
   min-height: 100dvh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -125,13 +166,18 @@ body {
    TYPOGRAPHY
    =========================== */
 h1, h2, h3, h4, h5, h6 {
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
   color: var(--text-primary);
 }
 
-h1 { font-size: clamp(1.75rem, 5vw, 2.5rem); font-weight: var(--weight-bold); }
-h2 { font-size: clamp(1.25rem, 4vw, 1.75rem); font-weight: var(--weight-semibold); }
+h1, h2 {
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+h1 { font-size: clamp(1.35rem, 4.6vw, 2.1rem); font-weight: var(--weight-bold); }
+h2 { font-size: clamp(1.05rem, 3.6vw, 1.45rem); font-weight: var(--weight-semibold); }
 h3 { font-size: 1.125rem; font-weight: var(--weight-semibold); }
 h4 { font-size: 1rem; font-weight: var(--weight-medium); }
 
@@ -179,20 +225,20 @@ p {
 
 .btn-primary {
   background: var(--xp-purple);
-  color: var(--white);
-  box-shadow: 0 0 0 0 var(--xp-purple-glow);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-crisp);
 }
 .btn-primary:hover {
   background: var(--xp-purple-light);
-  box-shadow: var(--shadow-glow-purple);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-crisp), var(--shadow-glow-purple);
+  transform: translateY(-2px);
 }
 .btn-primary:active { transform: translateY(0); }
 
 .btn-secondary {
   background: var(--bg-elevated);
   color: var(--text-primary);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
 }
 .btn-secondary:hover {
   background: var(--bg-card);
@@ -219,7 +265,7 @@ p {
   border-radius: var(--radius-circle);
   background: var(--bg-elevated);
   color: var(--text-secondary);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
 }
 .btn-icon:hover { background: var(--bg-card); color: var(--text-primary); }
 
@@ -231,7 +277,7 @@ p {
    =========================== */
 .card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   box-shadow: var(--shadow-card);
@@ -239,9 +285,9 @@ p {
 }
 
 .card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--border-active);
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 32px rgba(2, 6, 23, 0.45);
 }
 
 .card-glow-purple { border-color: rgba(139, 92, 246, 0.3); box-shadow: 0 0 20px rgba(139, 92, 246, 0.1); }
@@ -381,10 +427,10 @@ p {
   width: 100%;
   max-width: var(--max-width);
   height: var(--bottom-nav-height);
-  background: rgba(15, 22, 41, 0.92);
+  background: var(--bg-overlay);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
+  border-top: 2px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-around;
@@ -401,9 +447,11 @@ p {
   border-radius: var(--radius-md);
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 0.6875rem;
+  font-size: 0.6rem;
   font-weight: var(--weight-medium);
-  letter-spacing: 0.02em;
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   transition: all var(--transition-fast);
   cursor: pointer;
   background: none;
@@ -425,10 +473,10 @@ p {
   max-width: var(--max-width);
   margin: 0 auto;
   padding: var(--space-3) var(--space-4);
-  background: rgba(8, 13, 24, 0.9);
+  background: var(--bg-overlay);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -476,7 +524,7 @@ p {
   width: 100%;
   padding: 12px 16px;
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-family: var(--font-sans);
@@ -588,6 +636,7 @@ textarea.input { resize: vertical; min-height: 100px; }
   border-radius: var(--radius-pill);
   overflow-x: auto;
   scrollbar-width: none;
+  border: 2px solid var(--border);
 }
 .tab-bar::-webkit-scrollbar { display: none; }
 
@@ -599,7 +648,7 @@ textarea.input { resize: vertical; min-height: 100px; }
   font-weight: var(--weight-medium);
   color: var(--text-muted);
   background: none;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
@@ -608,7 +657,8 @@ textarea.input { resize: vertical; min-height: 100px; }
 .tab-item.active {
   background: var(--bg-card);
   color: var(--text-primary);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  border-color: var(--border);
+  box-shadow: var(--shadow-card);
 }
 
 /* ===========================
@@ -730,6 +780,14 @@ textarea.input { resize: vertical; min-height: 100px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--bg-card); }
+
+/* ===========================
+   THEME TOGGLE
+   =========================== */
+.theme-toggle {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
 
 /* ===========================
    UTILITIES

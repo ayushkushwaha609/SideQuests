@@ -16,7 +16,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#080d18",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f6f6f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a0f1a" },
+  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -32,6 +35,20 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className="antialiased">
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                (function() {
+                  try {
+                    var stored = localStorage.getItem('theme');
+                    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+                    var theme = (stored === 'light' || stored === 'dark') ? stored : (prefersLight ? 'light' : 'dark');
+                    document.documentElement.setAttribute('data-theme', theme);
+                  } catch (e) {}
+                })();
+              `,
+            }}
+          />
           {children}
           <script
             dangerouslySetInnerHTML={{

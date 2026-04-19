@@ -1,7 +1,8 @@
 "use client";
+import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { Zap, MessageCircle } from "lucide-react";
+import { Zap, MessageCircle, Sun, Moon } from "lucide-react";
 
 interface AppHeaderProps {
   xp?: number;
@@ -10,17 +11,44 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({ xp = 0, level = 1, streak = 0 }: AppHeaderProps) {
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [mounted, setMounted] = useState(false);
   const xpForCurrentLevel = (level - 1) * 100;
   const xpForNextLevel = level * 100;
   const xpProgress = xp - xpForCurrentLevel;
   const xpNeeded = xpForNextLevel - xpForCurrentLevel;
   const fillPercent = Math.min(100, Math.round((xpProgress / xpNeeded) * 100));
 
+  useEffect(() => {
+    setMounted(true);
+    const stored = window.localStorage.getItem("theme");
+    if (stored === "light" || stored === "dark") {
+      setTheme(stored);
+      return;
+    }
+    const prefersLight = window.matchMedia?.("(prefers-color-scheme: light)").matches;
+    setTheme(prefersLight ? "light" : "dark");
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    document.documentElement.setAttribute("data-theme", theme);
+    window.localStorage.setItem("theme", theme);
+  }, [theme, mounted]);
+
   return (
     <header className="app-header">
       <Link href="/" style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", textDecoration: "none" }}>
         <span style={{ fontSize: "1.4rem" }}>⚔️</span>
-        <span style={{ fontWeight: "var(--weight-bold)", fontSize: "1.1rem", color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+        <span
+          style={{
+            fontWeight: "var(--weight-bold)",
+            fontSize: "0.95rem",
+            color: "var(--text-primary)",
+            letterSpacing: "0.08em",
+            fontFamily: "var(--font-display)",
+          }}
+        >
           SideQuest
         </span>
       </Link>
@@ -44,6 +72,15 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0 }: AppHeaderPr
         <Link href="/messages" style={{ color: "var(--text-muted)" }}>
           <MessageCircle size={20} />
         </Link>
+        <button
+          type="button"
+          className="btn-icon theme-toggle"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          title={theme === "dark" ? "Light mode" : "Dark mode"}
+        >
+          {mounted && theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
         <UserButton userProfileMode="navigation" userProfileUrl="/settings" />
       </div>
     </header>
