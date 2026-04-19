@@ -72,7 +72,7 @@ export default function FriendsPage() {
           <Search size={16} color="var(--text-muted)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)" }} />
           <input
             className="input"
-            placeholder="Search by name or username..."
+            placeholder="Search by username first, then name..."
             value={searchQuery}
             style={{ paddingLeft: 40 }}
             onChange={(e) => {
@@ -150,7 +150,7 @@ export default function FriendsPage() {
           <div className="empty-state">
             <div className="empty-state-icon">👥</div>
             <h3>No friends yet</h3>
-            <p>Search for friends by name or username above.</p>
+            <p>Search by username first, then display name to find new friends.</p>
           </div>
         ) : (
           <div className="seamless-stack">
