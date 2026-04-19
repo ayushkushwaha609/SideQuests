@@ -12,14 +12,24 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const recurrence = searchParams.get("recurrence");
 
-  // Get quests created by user OR quests they're a member of
+  const memberRows = await db
+    .select({ questId: questMembers.questId })
+    .from(questMembers)
+    .where(and(eq(questMembers.userId, user.id), eq(questMembers.inviteStatus, "accepted")));
+
+  const memberQuestIds = memberRows.map((row) => row.questId);
+
+  const baseCondition = memberQuestIds.length
+    ? or(eq(sidequests.createdBy, user.id), inArray(sidequests.id, memberQuestIds))
+    : eq(sidequests.createdBy, user.id);
+
   const myQuests = await db
     .select()
     .from(sidequests)
     .where(
       recurrence
-        ? and(eq(sidequests.createdBy, user.id), eq(sidequests.recurrence, recurrence as any))
-        : eq(sidequests.createdBy, user.id)
+        ? and(baseCondition, eq(sidequests.recurrence, recurrence as any))
+        : baseCondition
     )
     .orderBy(desc(sidequests.createdAt));
 

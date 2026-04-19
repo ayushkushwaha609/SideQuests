@@ -9,7 +9,7 @@ export type InviteFriend = {
   displayName?: string | null;
   avatarUrl: string | null;
   level: number;
-  status: "available" | "pending" | "accepted";
+  status: "available" | "pending" | "accepted" | "declined";
 };
 
 export default function QuestInviteList({
@@ -91,6 +91,10 @@ export default function QuestInviteList({
           ) : f.status === "pending" ? (
             <div className="badge badge-one-time" style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <Clock size={12} /> Pending
+            </div>
+          ) : f.status === "declined" ? (
+            <div className="badge badge-one-time" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              Rejected
             </div>
           ) : (
             <button
