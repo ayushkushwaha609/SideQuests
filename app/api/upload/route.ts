@@ -26,6 +26,7 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const questId = formData.get("questId") as string | null;
+    const recordArtifact = formData.get("recordArtifact") === "true";
 
     const user = await getUserOrCreate();
     if (!user) {
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
       stream.end(buffer);
     });
 
-    if (questId) {
+    if (questId && recordArtifact) {
       await db.insert(questArtifacts).values({
         questId,
         userId: user.id,

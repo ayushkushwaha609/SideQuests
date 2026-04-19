@@ -14,6 +14,7 @@ export default function MediaUpload({
   onClear,
   accept = "image/*,video/*",
   ariaLabel = "Upload media",
+  recordArtifact = false,
   containerStyle,
   buttonStyle,
 }: {
@@ -23,11 +24,13 @@ export default function MediaUpload({
   onClear?: () => void;
   accept?: string;
   ariaLabel?: string;
+  recordArtifact?: boolean;
   containerStyle?: CSSProperties;
   buttonStyle?: CSSProperties;
 }) {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [previewType, setPreviewType] = useState<"image" | "video" | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -36,13 +39,17 @@ export default function MediaUpload({
 
     // Preview
     const reader = new FileReader();
-    reader.onload = () => setPreview(reader.result as string);
+    reader.onload = () => {
+      setPreview(reader.result as string);
+      setPreviewType(file.type.startsWith("video/") ? "video" : "image");
+    };
     reader.readAsDataURL(file);
 
     setUploading(true);
     const formData = new FormData();
     formData.append("file", file);
     if (questId) formData.append("questId", questId);
+    if (recordArtifact) formData.append("recordArtifact", "true");
 
     try {
       const res = await fetch("/api/upload", {
@@ -67,6 +74,7 @@ export default function MediaUpload({
 
   function clearPreview() {
     setPreview(null);
+    setPreviewType(null);
     if (inputRef.current) inputRef.current.value = "";
     if (onClear) onClear();
   }
@@ -83,17 +91,30 @@ export default function MediaUpload({
 
       {preview ? (
         <div style={{ position: "relative", marginTop: "var(--space-2)" }}>
-          <img
-            src={preview}
-            alt="Preview"
-            style={{
-              width: "100%",
-              maxHeight: 200,
-              objectFit: "cover",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--border)",
-            }}
-          />
+          {previewType === "video" ? (
+            <video
+              controls
+              src={preview}
+              style={{
+                width: "100%",
+                maxHeight: 200,
+                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--border)",
+              }}
+            />
+          ) : (
+            <img
+              src={preview}
+              alt="Preview"
+              style={{
+                width: "100%",
+                maxHeight: 200,
+                objectFit: "cover",
+                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--border)",
+              }}
+            />
+          )}
           {uploading && (
             <div
               style={{

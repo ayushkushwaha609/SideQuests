@@ -60,6 +60,7 @@ export const achievementTypeEnum = pgEnum("achievement_type", [
 export const questArtifactTypeEnum = pgEnum("quest_artifact_type", [
   "comment",
   "completion",
+  "proof",
   "upload",
   "chat",
 ]);

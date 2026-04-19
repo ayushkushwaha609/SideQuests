@@ -19,6 +19,8 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [showProofForm, setShowProofForm] = useState(false);
   const [showSharePrompt, setShowSharePrompt] = useState(false);
+  const [sendingProof, setSendingProof] = useState(false);
+  const [proofSent, setProofSent] = useState(false);
   const router = useRouter();
 
   async function handleComplete(share: boolean) {
@@ -53,6 +55,40 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
     setShowSharePrompt(true);
   }
 
+  async function handleSendProof() {
+    if (sendingProof) return;
+    const trimmed = note.trim();
+    if (!trimmed && !imageUrl) return;
+
+    setSendingProof(true);
+    setProofSent(false);
+
+    try {
+      const res = await fetch(`/api/quests/${questId}/proof`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          note: trimmed || undefined,
+          mediaUrl: imageUrl || undefined,
+        }),
+      });
+
+      if (res.ok) {
+        setNote("");
+        setImageUrl(null);
+        setProofSent(true);
+        setTimeout(() => setProofSent(false), 2000);
+        router.refresh();
+      } else {
+        alert("Failed to send proof.");
+      }
+    } catch (e) {
+      alert("Failed to send proof.");
+    }
+
+    setSendingProof(false);
+  }
+
   return (
     <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
       {/* Proof Form */}
@@ -79,6 +115,19 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
                 style={{ minHeight: "60px", resize: "none", fontSize: "0.85rem" }}
               />
               <MediaUpload questId={questId} onUpload={({ url }) => setImageUrl(url)} />
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleSendProof}
+                  disabled={sendingProof || (!note.trim() && !imageUrl)}
+                >
+                  {sendingProof ? "Sending..." : "Send Proof"}
+                </button>
+                {proofSent && (
+                  <span style={{ fontSize: "0.8rem", color: "var(--success)" }}>Sent</span>
+                )}
+              </div>
             </div>
           )}
         </div>

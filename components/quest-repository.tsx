@@ -77,6 +77,8 @@ export default function QuestRepository({ questId }: { questId: string }) {
         return "Comment";
       case "completion":
         return "Completion";
+      case "proof":
+        return "Proof";
       case "upload":
         return "Upload";
       case "chat":
@@ -84,6 +86,15 @@ export default function QuestRepository({ questId }: { questId: string }) {
       default:
         return type;
     }
+  }
+
+  function getMediaUrl(artifact: RepoArtifact) {
+    const metadata = artifact.metadata || {};
+    return metadata.mediaUrl || metadata.imageUrl || metadata.url || null;
+  }
+
+  function isVideoUrl(url: string) {
+    return /\.(mp4|webm|mov|ogg)(\?|#|$)/i.test(url);
   }
 
   return (
@@ -128,6 +139,32 @@ export default function QuestRepository({ questId }: { questId: string }) {
                 </div>
                 <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 2 }}>{typeLabel(artifact.type)}</div>
                 <div style={{ marginTop: 6 }}>{artifact.summary ?? ""}</div>
+                {getMediaUrl(artifact) && (
+                  <div style={{ marginTop: "var(--space-2)" }}>
+                    {isVideoUrl(getMediaUrl(artifact) as string) ? (
+                      <video
+                        controls
+                        src={getMediaUrl(artifact) as string}
+                        style={{ width: "100%", maxHeight: 240, borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}
+                      />
+                    ) : (
+                      <img
+                        src={getMediaUrl(artifact) as string}
+                        alt=""
+                        style={{ width: "100%", maxHeight: 240, objectFit: "cover", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}
+                      />
+                    )}
+                    <a
+                      href={getMediaUrl(artifact) as string}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn btn-ghost btn-sm"
+                      style={{ marginTop: "var(--space-2)" }}
+                    >
+                      Open preview
+                    </a>
+                  </div>
+                )}
               </div>
             ))}
             {hasMore && (
