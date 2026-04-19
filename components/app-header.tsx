@@ -43,6 +43,7 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
       <Link href="/" className="app-title" style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", textDecoration: "none" }}>
         <span style={{ fontSize: "1.4rem" }}>⚔️</span>
         <span
+          className="app-title-text"
           style={{
             fontWeight: "var(--weight-bold)",
             fontSize: "0.95rem",
@@ -58,7 +59,7 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
       <div className="app-header-actions" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
         {/* XP & level */}
         <div className="app-xp" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", minWidth: 100 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+          <div className="app-xp-text" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <Zap size={12} color="var(--xp-purple-light)" fill="var(--xp-purple-light)" />
             <span style={{ fontSize: "0.75rem", fontWeight: "var(--weight-medium)", color: "var(--xp-purple-light)" }}>
               Lv {level} · {xp} XP
