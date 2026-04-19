@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { db } from "@/db";
 import { questArtifacts } from "@/db/schema";
+import { pusherServer } from "@/lib/pusher";
 import { v2 as cloudinary } from "cloudinary";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -69,7 +70,9 @@ export async function POST(request: Request) {
     });
 
     if (questId && recordArtifact) {
-      await db.insert(questArtifacts).values({
+      const [artifact] = await db
+        .insert(questArtifacts)
+        .values({
         questId,
         userId: user.id,
         type: "upload",
@@ -82,7 +85,21 @@ export async function POST(request: Request) {
           height: result.height,
           bytes: result.bytes,
         },
-      });
+      })
+        .returning();
+
+      if (artifact) {
+        await pusherServer.trigger(`quest-activity-${questId}`, "new-artifact", {
+          ...artifact,
+          user: {
+            id: user.id,
+            username: user.username,
+            displayName: user.displayName,
+            avatarUrl: user.avatarUrl,
+            level: user.level,
+          },
+        });
+      }
     }
 
     return NextResponse.json({

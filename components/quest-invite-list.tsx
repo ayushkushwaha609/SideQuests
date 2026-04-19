@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { UserPlus, Check, Clock } from "lucide-react";
+import { pusherClient } from "@/lib/pusher-client";
 
 export type InviteFriend = {
   id: string;
@@ -21,6 +22,21 @@ export default function QuestInviteList({
 }) {
   const [items, setItems] = useState(friends);
   const [sendingId, setSendingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!pusherClient) return;
+    const channel = pusherClient.subscribe(`quest-invite-status-${questId}`);
+
+    channel.bind("invite-status", (data: { userId: string; status: "accepted" | "declined" | "pending" }) => {
+      setItems((prev) => prev.map((item) =>
+        item.id === data.userId ? { ...item, status: data.status } : item
+      ));
+    });
+
+    return () => {
+      pusherClient.unsubscribe(`quest-invite-status-${questId}`);
+    };
+  }, [questId]);
 
   async function invite(friendId: string) {
     if (sendingId) return;

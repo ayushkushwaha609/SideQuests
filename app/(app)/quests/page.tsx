@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle2, Circle, Users, Zap, ChevronRight, Check, X } from "lucide-react";
+import { pusherClient } from "@/lib/pusher-client";
 
 type Recurrence = "daily" | "weekly" | "monthly" | "yearly" | "lifetime" | "one-time";
 type TabValue = Recurrence | "all" | "invites";
@@ -46,6 +47,7 @@ export default function QuestsPage() {
   const [invites, setInvites] = useState<InviteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [completing, setCompleting] = useState<string | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeTab === "invites") {
@@ -54,6 +56,32 @@ export default function QuestsPage() {
       fetchQuests();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!pusherClient || !currentUserId || activeTab !== "invites") return;
+    const channel = pusherClient.subscribe(`quest-invites-${currentUserId}`);
+
+    channel.bind("invite-created", () => {
+      fetchInvites();
+    });
+
+    channel.bind("invite-updated", () => {
+      fetchInvites();
+    });
+
+    return () => {
+      pusherClient.unsubscribe(`quest-invites-${currentUserId}`);
+    };
+  }, [activeTab, currentUserId]);
+
+  useEffect(() => {
+    if (!currentUserId) {
+      fetch("/api/me")
+        .then((res) => res.json())
+        .then((data) => setCurrentUserId(data.user?.id ?? null))
+        .catch(() => setCurrentUserId(null));
+    }
+  }, [currentUserId]);
 
   async function fetchQuests() {
     setLoading(true);

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { pusherClient } from "@/lib/pusher-client";
 
 interface RepoUser {
   id: string;
@@ -40,6 +41,22 @@ export default function QuestRepository({ questId }: { questId: string }) {
   useEffect(() => {
     fetchRepository();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questId]);
+
+  useEffect(() => {
+    if (!pusherClient) return;
+    const channel = pusherClient.subscribe(`quest-activity-${questId}`);
+
+    channel.bind("new-artifact", (artifact: RepoArtifact) => {
+      setArtifacts((prev) => {
+        if (prev.find((item) => item.id === artifact.id)) return prev;
+        return [artifact, ...prev];
+      });
+    });
+
+    return () => {
+      pusherClient.unsubscribe(`quest-activity-${questId}`);
+    };
   }, [questId]);
 
   async function fetchRepository(cursor?: string | null) {

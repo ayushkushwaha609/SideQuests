@@ -5,6 +5,7 @@ import { and, eq, or } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { sendPushToUser } from "@/lib/push";
+import { pusherServer } from "@/lib/pusher";
 
 export async function POST(
   request: Request,
@@ -66,6 +67,11 @@ export async function POST(
     title: "Quest invite",
     body: `${inviter?.displayName ?? inviter?.username ?? "Someone"} invited you to ${quest.title}.`,
     url: `/quests/${quest.id}/invite`,
+  });
+
+  await pusherServer.trigger(`quest-invites-${friendId}`, "invite-created", {
+    questId: quest.id,
+    inviteStatus: "pending",
   });
 
   return NextResponse.json({ status: "pending" }, { status: 201 });

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Send, Loader2, MessageCircle } from "lucide-react";
+import { pusherClient } from "@/lib/pusher-client";
 
 interface CommentData {
   id: string;
@@ -28,6 +29,22 @@ export default function CommentsSection({ questId }: { questId: string }) {
 
   useEffect(() => {
     fetchComments();
+  }, [questId]);
+
+  useEffect(() => {
+    if (!pusherClient) return;
+    const channel = pusherClient.subscribe(`quest-comments-${questId}`);
+
+    channel.bind("new-comment", (comment: CommentData) => {
+      setComments((prev) => {
+        if (prev.find((c) => c.id === comment.id)) return prev;
+        return [comment, ...prev];
+      });
+    });
+
+    return () => {
+      pusherClient.unsubscribe(`quest-comments-${questId}`);
+    };
   }, [questId]);
 
   async function fetchComments(cursor?: string | null) {

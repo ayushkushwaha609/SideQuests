@@ -4,6 +4,7 @@ import { comments, questArtifacts, users } from "@/db/schema";
 import { eq, desc, lt, and } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
+import { pusherServer } from "@/lib/pusher";
 
 // GET /api/quests/[id]/comments — list comments for a quest
 export async function GET(
@@ -83,14 +84,43 @@ export async function POST(
     })
     .returning();
 
-  await db.insert(questArtifacts).values({
+  const [artifact] = await db
+    .insert(questArtifacts)
+    .values({
     questId,
     userId: user.id,
     type: "comment",
     sourceId: comment.id,
     summary: content.trim().slice(0, 120),
     metadata: { content: content.trim() },
-  });
+  })
+    .returning();
+
+  const commentPayload = {
+    ...comment,
+    user: {
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName,
+      avatarUrl: user.avatarUrl,
+      level: user.level,
+    },
+  };
+
+  await pusherServer.trigger(`quest-comments-${questId}`, "new-comment", commentPayload);
+
+  if (artifact) {
+    await pusherServer.trigger(`quest-activity-${questId}`, "new-artifact", {
+      ...artifact,
+      user: {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        level: user.level,
+      },
+    });
+  }
 
   return NextResponse.json({
     comment: {

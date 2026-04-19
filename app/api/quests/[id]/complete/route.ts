@@ -5,6 +5,7 @@ import { eq, and, count } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { sendPushToUser } from "@/lib/push";
+import { pusherServer } from "@/lib/pusher";
 
 export async function POST(
   request: Request,
@@ -73,7 +74,9 @@ export async function POST(
     })
     .returning();
 
-  await db.insert(questArtifacts).values({
+  const [artifact] = await db
+    .insert(questArtifacts)
+    .values({
     questId,
     userId: user.id,
     type: "completion",
@@ -83,7 +86,21 @@ export async function POST(
       note: body.note ?? null,
       imageUrl: body.imageUrl ?? null,
     },
-  });
+  })
+    .returning();
+
+  if (artifact) {
+    await pusherServer.trigger(`quest-activity-${questId}`, "new-artifact", {
+      ...artifact,
+      user: {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        level: user.level,
+      },
+    });
+  }
 
   if (quest.recurrence === "one-time" || quest.recurrence === "lifetime") {
     await db.update(sidequests).set({ status: "completed" }).where(eq(sidequests.id, quest.id));

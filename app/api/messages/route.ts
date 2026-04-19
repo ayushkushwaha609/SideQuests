@@ -6,6 +6,7 @@ import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { eq, and, lt, desc } from "drizzle-orm";
 import { sendPushToUser } from "@/lib/push";
+import { pusherServer } from "@/lib/pusher";
 
 export async function GET(req: Request) {
   try {
@@ -82,7 +83,9 @@ export async function POST(req: Request) {
           ? "Sent an image"
           : "Sent a message";
 
-      await db.insert(questArtifacts).values({
+      const [artifact] = await db
+        .insert(questArtifacts)
+        .values({
         questId,
         userId: user.id,
         type: "chat",
@@ -92,7 +95,21 @@ export async function POST(req: Request) {
           text: text || null,
           imageUrl: imageUrl || null,
         },
-      });
+      })
+        .returning();
+
+      if (artifact) {
+        await pusherServer.trigger(`quest-activity-${questId}`, "new-artifact", {
+          ...artifact,
+          user: {
+            id: user.id,
+            username: user.username,
+            displayName: user.displayName,
+            avatarUrl: user.avatarUrl,
+            level: user.level,
+          },
+        });
+      }
     }
 
     const [firstId, secondId] = chatId.split("_");

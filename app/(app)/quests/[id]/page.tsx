@@ -46,12 +46,6 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
     orderBy: [desc(directMessages.createdAt)],
     limit: 50,
     with: { user: true },
-  });
-
-  const formattedQuestMessages = initialMessagesWithUsers.reverse().map(m => ({
-    id: m.id,
-    userId: m.userId,
-    username: m.user.username,
     displayName: m.user.displayName,
     avatarUrl: m.user.avatarUrl,
     text: m.text,

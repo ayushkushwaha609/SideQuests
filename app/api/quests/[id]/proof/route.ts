@@ -4,6 +4,7 @@ import { questArtifacts, questMembers, sidequests } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
+import { pusherServer } from "@/lib/pusher";
 
 export async function POST(
   request: Request,
@@ -61,6 +62,19 @@ export async function POST(
       },
     })
     .returning();
+
+  if (artifact) {
+    await pusherServer.trigger(`quest-activity-${questId}`, "new-artifact", {
+      ...artifact,
+      user: {
+        id: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        avatarUrl: user.avatarUrl,
+        level: user.level,
+      },
+    });
+  }
 
   return NextResponse.json({ artifact }, { status: 201 });
 }

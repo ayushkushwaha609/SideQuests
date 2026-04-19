@@ -4,6 +4,7 @@ import { questMembers, sidequests } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { sendPushToUser } from "@/lib/push";
+import { pusherServer } from "@/lib/pusher";
 
 export async function PATCH(
   request: Request,
@@ -36,7 +37,17 @@ export async function PATCH(
       body: `${user.displayName ?? user.username ?? "Someone"} ${accept ? "accepted" : "declined"} your invite to ${quest.title}.`,
       url: `/quests/${quest.id}/invite`,
     });
+
+    await pusherServer.trigger(`quest-invite-status-${quest.id}`, "invite-status", {
+      userId: user.id,
+      status: updated.inviteStatus,
+    });
   }
+
+  await pusherServer.trigger(`quest-invites-${user.id}`, "invite-updated", {
+    inviteId: updated.id,
+    status: updated.inviteStatus,
+  });
 
   return NextResponse.json({ status: updated.inviteStatus });
 }
