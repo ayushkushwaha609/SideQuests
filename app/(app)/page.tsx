@@ -5,7 +5,7 @@ import { eq, and, or, desc, inArray, ne, lt } from "drizzle-orm";
 import Link from "next/link";
 import { CheckCircle2, Star, Users, Zap, UserPlus } from "lucide-react";
 import { getUserOrCreate } from "@/lib/auth-sync";
-import CommentsSection from "@/components/comments-section";
+import CommentToggle from "@/components/comment-toggle";
 
 function timeAgo(date: Date): string {
   const now = new Date();
@@ -262,7 +262,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
                     {/* Comments */}
                     {activity.type === "quest_completed" && quest && (
-                      <CommentsSection questId={quest.id} />
+                      <CommentToggle questId={quest.id} />
                     )}
                   </div>
                 );
@@ -338,7 +338,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
                       </Link>
                     )}
 
-                    {quest && <CommentsSection questId={quest.id} />}
+                    {quest && <CommentToggle questId={quest.id} />}
                   </div>
                 );
               })}
