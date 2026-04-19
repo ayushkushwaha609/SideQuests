@@ -40,7 +40,7 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
 
   return (
     <header className="app-header">
-      <Link href="/" style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", textDecoration: "none" }}>
+      <Link href="/" className="app-title" style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", textDecoration: "none" }}>
         <span style={{ fontSize: "1.4rem" }}>⚔️</span>
         <span
           style={{
@@ -55,9 +55,9 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
         </span>
       </Link>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
+      <div className="app-header-actions" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
         {/* XP & level */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", minWidth: 100 }}>
+        <div className="app-xp" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", minWidth: 100 }}>
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
             <Zap size={12} color="var(--xp-purple-light)" fill="var(--xp-purple-light)" />
             <span style={{ fontSize: "0.75rem", fontWeight: "var(--weight-medium)", color: "var(--xp-purple-light)" }}>

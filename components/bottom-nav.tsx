@@ -27,7 +27,7 @@ export default function BottomNav({ pendingRequests = 0 }: { pendingRequests?: n
               <Icon size={22} strokeWidth={active ? 2.5 : 1.8} />
               {showBadge && <span className="badge-pill">{pendingLabel}</span>}
             </span>
-            <span>{label}</span>
+              <span className="nav-label">{label}</span>
           </Link>
         );
       })}
