@@ -25,24 +25,23 @@ export async function POST(
   const quest = await db.query.sidequests.findFirst({ where: eq(sidequests.id, questId) });
   if (!quest) return NextResponse.json({ error: "Quest not found" }, { status: 404 });
 
-  function addMonths(date: Date, months: number) {
-    const d = new Date(date);
-    d.setMonth(d.getMonth() + months);
-    return d;
-  }
-
-  function addYears(date: Date, years: number) {
-    const d = new Date(date);
-    d.setFullYear(d.getFullYear() + years);
-    return d;
-  }
-
-  function getNextAvailableAt(recur: string, lastCompletedAt: Date) {
-    if (recur === "daily") return new Date(lastCompletedAt.getTime() + 24 * 60 * 60 * 1000);
-    if (recur === "weekly") return new Date(lastCompletedAt.getTime() + 7 * 24 * 60 * 60 * 1000);
-    if (recur === "monthly") return addMonths(lastCompletedAt, 1);
-    if (recur === "yearly") return addYears(lastCompletedAt, 1);
-    return null;
+  function getStartOfPeriod(recur: string): Date {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    if (recur === "daily") return d;
+    if (recur === "weekly") {
+      d.setDate(d.getDate() - d.getDay());
+      return d;
+    }
+    if (recur === "monthly") {
+      d.setDate(1);
+      return d;
+    }
+    if (recur === "yearly") {
+      d.setMonth(0, 1);
+      return d;
+    }
+    return new Date(0);
   }
 
   const lastCompletion = await db.query.questCompletions.findFirst({
@@ -54,8 +53,8 @@ export async function POST(
     if (quest.recurrence === "one-time") {
       return NextResponse.json({ error: "Already completed" }, { status: 409 });
     }
-    const nextAvailableAt = getNextAvailableAt(quest.recurrence, lastCompletion.completedAt);
-    if (nextAvailableAt && new Date() < nextAvailableAt) {
+    const startOfPeriod = getStartOfPeriod(quest.recurrence);
+    if (lastCompletion.completedAt >= startOfPeriod) {
       return NextResponse.json({ error: "Already completed" }, { status: 409 });
     }
   }
