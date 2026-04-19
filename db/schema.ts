@@ -57,6 +57,13 @@ export const achievementTypeEnum = pgEnum("achievement_type", [
   "level_10",
 ]);
 
+export const questArtifactTypeEnum = pgEnum("quest_artifact_type", [
+  "comment",
+  "completion",
+  "upload",
+  "chat",
+]);
+
 // Users table (synced from Clerk via webhook)
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -171,6 +178,23 @@ export const comments = pgTable("comments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+
+// Quest artifacts (timeline of contributions)
+export const questArtifacts = pgTable("quest_artifacts", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  questId: uuid("quest_id")
+    .notNull()
+    .references(() => sidequests.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  type: questArtifactTypeEnum("type").notNull(),
+  sourceId: uuid("source_id"),
+  summary: text("summary"),
+  metadata: jsonb("metadata").$type<Record<string, any>>().default({}).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Direct Messages
 export const directMessages = pgTable("direct_messages", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -217,3 +241,4 @@ export type Friendship = typeof friendships.$inferSelect;
 export type Achievement = typeof achievements.$inferSelect;
 export type Activity = typeof activities.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
+export type QuestArtifact = typeof questArtifacts.$inferSelect;

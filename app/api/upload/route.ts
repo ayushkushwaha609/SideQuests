@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserOrCreate } from "@/lib/auth-sync";
+import { db } from "@/db";
+import { questArtifacts } from "@/db/schema";
 import { v2 as cloudinary } from "cloudinary";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -64,6 +66,23 @@ export async function POST(request: Request) {
       );
       stream.end(buffer);
     });
+
+    if (questId) {
+      await db.insert(questArtifacts).values({
+        questId,
+        userId: user.id,
+        type: "upload",
+        summary: file.name ? `Uploaded ${file.name}`.slice(0, 120) : "Uploaded a file",
+        metadata: {
+          url: result.secure_url,
+          publicId: result.public_id,
+          format: result.format,
+          width: result.width,
+          height: result.height,
+          bytes: result.bytes,
+        },
+      });
+    }
 
     return NextResponse.json({
       url: result.secure_url,

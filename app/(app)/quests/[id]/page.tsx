@@ -9,6 +9,8 @@ import QuestCompleteButton from "./complete-button";
 import DeleteQuestButton from "./delete-button";
 import CommentsSection from "@/components/comments-section";
 import QuestChat from "@/components/quest-chat";
+import QuestRepository from "@/components/quest-repository";
+import LeaveQuestButton from "@/components/leave-quest-button";
 
 export default async function QuestDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -35,6 +37,7 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
   const creator = await db.query.users.findFirst({ where: eq(users.id, quest.createdBy) });
 
   const isOwner = currentUser?.id === quest.createdBy;
+  const isMember = !!currentUser && (isOwner || members.some((m) => m.userId === currentUser.id));
 
   // Fetch initial messages for quest chat
   const qChatId = `quest_${quest.id}`;
@@ -142,6 +145,12 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
         <h3 style={{ marginBottom: "var(--space-3)" }}>Comments</h3>
         <CommentsSection questId={quest.id} />
       </section>
+
+      {/* Activity */}
+      <section>
+        <h3 style={{ marginBottom: "var(--space-3)" }}>Activity</h3>
+        <QuestRepository questId={quest.id} />
+      </section>
       {/* Quest Chat */}
       {currentUser && (
         <section>
@@ -159,15 +168,17 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
         </section>
       )}
 
-      {/* Owner actions */}
-      {isOwner && (
+      {/* Owner/member actions */}
+      {isOwner ? (
         <div style={{ display: "flex", gap: "var(--space-2)" }}>
           <Link href={`/quests/${quest.id}/invite`} className="btn btn-secondary" style={{ flex: 1, justifyContent: "center" }}>
             <Users size={16} /> Invite Friends
           </Link>
           <DeleteQuestButton questId={quest.id} />
         </div>
-      )}
+      ) : isMember ? (
+        <LeaveQuestButton questId={quest.id} />
+      ) : null}
     </div>
   );
 }

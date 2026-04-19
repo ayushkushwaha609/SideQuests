@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { comments, users } from "@/db/schema";
+import { comments, questArtifacts, users } from "@/db/schema";
 import { eq, desc, lt, and } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
@@ -82,6 +82,15 @@ export async function POST(
       content: content.trim(),
     })
     .returning();
+
+  await db.insert(questArtifacts).values({
+    questId,
+    userId: user.id,
+    type: "comment",
+    sourceId: comment.id,
+    summary: content.trim().slice(0, 120),
+    metadata: { content: content.trim() },
+  });
 
   return NextResponse.json({
     comment: {

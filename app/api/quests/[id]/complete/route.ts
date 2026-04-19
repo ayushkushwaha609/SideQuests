@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { users, sidequests, questCompletions, achievements, activities } from "@/db/schema";
+import { users, sidequests, questCompletions, achievements, activities, questArtifacts } from "@/db/schema";
 import { eq, and, count } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
@@ -63,11 +63,26 @@ export async function POST(
   const shouldShare = body.share === true;
 
   // Record completion
-  await db.insert(questCompletions).values({
+  const [completion] = await db
+    .insert(questCompletions)
+    .values({
+      questId,
+      userId: user.id,
+      note: body.note ?? null,
+      imageUrl: body.imageUrl ?? null,
+    })
+    .returning();
+
+  await db.insert(questArtifacts).values({
     questId,
     userId: user.id,
-    note: body.note ?? null,
-    imageUrl: body.imageUrl ?? null,
+    type: "completion",
+    sourceId: completion.id,
+    summary: body.note ? String(body.note).trim().slice(0, 120) : "Completed quest",
+    metadata: {
+      note: body.note ?? null,
+      imageUrl: body.imageUrl ?? null,
+    },
   });
 
   if (quest.recurrence === "one-time" || quest.recurrence === "lifetime") {

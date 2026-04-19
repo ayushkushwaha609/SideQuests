@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { directMessages, users } from "@/db/schema";
+import { directMessages, users, questArtifacts } from "@/db/schema";
 import { pusherServer } from "@/lib/pusher";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
@@ -73,6 +73,27 @@ export async function POST(req: Request) {
     }).returning();
 
     const sender = await db.query.users.findFirst({ where: eq(users.id, user.id) });
+
+    if (chatId.startsWith("quest_")) {
+      const questId = chatId.slice("quest_".length);
+      const summary = text?.trim()
+        ? text.trim().slice(0, 120)
+        : imageUrl
+          ? "Sent an image"
+          : "Sent a message";
+
+      await db.insert(questArtifacts).values({
+        questId,
+        userId: user.id,
+        type: "chat",
+        sourceId: savedMessage.id,
+        summary,
+        metadata: {
+          text: text || null,
+          imageUrl: imageUrl || null,
+        },
+      });
+    }
 
     const [firstId, secondId] = chatId.split("_");
     const recipientId = firstId === user.id ? secondId : firstId;
