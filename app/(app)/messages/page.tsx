@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { users, friendships } from "@/db/schema";
-import { eq, or, and, inArray } from "drizzle-orm";
+import { users, friendships, directMessages } from "@/db/schema";
+import { eq, or, and, inArray, desc } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import Link from "next/link";
 import { MessageSquare, ArrowLeft } from "lucide-react";
@@ -27,6 +27,27 @@ export default async function InboxPage() {
     ? await db.select().from(users).where(inArray(users.id, friendIds))
     : [];
 
+  const chatIds = friendIds.map((id) => [currentUser.id, id].sort().join("_"));
+
+  const lastMessages = chatIds.length
+    ? await db
+        .select({
+          message: directMessages,
+          sender: users,
+        })
+        .from(directMessages)
+        .leftJoin(users, eq(directMessages.userId, users.id))
+        .where(inArray(directMessages.chatId, chatIds))
+        .orderBy(desc(directMessages.createdAt))
+    : [];
+
+  const lastByChatId = new Map<string, typeof lastMessages[number]>();
+  for (const row of lastMessages) {
+    if (!lastByChatId.has(row.message.chatId)) {
+      lastByChatId.set(row.message.chatId, row);
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
       {/* Header */}
@@ -49,7 +70,21 @@ export default async function InboxPage() {
         </div>
       ) : (
         <div className="seamless-stack">
-          {friends.map((friend) => (
+          {friends.map((friend) => {
+            const chatId = [currentUser.id, friend.id].sort().join("_");
+            const lastRow = lastByChatId.get(chatId);
+            const senderName = lastRow
+              ? lastRow.message.userId === currentUser.id
+                ? "You"
+                : lastRow.sender?.displayName ?? lastRow.sender?.username ?? "Someone"
+              : null;
+            const previewText = lastRow?.message.text?.trim()
+              ? lastRow.message.text.trim().slice(0, 80)
+              : lastRow?.message.imageUrl
+                ? "Sent an image"
+                : "No messages yet";
+
+            return (
             <Link key={friend.id} href={`/messages/${friend.username}`} style={{ textDecoration: "none" }}>
               <div className="seamless-item seamless-item-compact animate-slide-up" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", cursor: "pointer" }}>
                 <div style={{ width: 44, height: 44, borderRadius: "50%", background: "var(--bg-elevated)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
@@ -60,12 +95,13 @@ export default async function InboxPage() {
                     {friend.displayName ?? friend.username}
                   </div>
                   <div style={{ color: "var(--text-muted)", fontSize: "0.8rem", marginTop: 2 }}>
-                    Level {friend.level}
+                    {senderName ? `Last from ${senderName}: ${previewText}` : previewText}
                   </div>
                 </div>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
