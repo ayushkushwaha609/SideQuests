@@ -62,6 +62,12 @@ export async function POST(
 
   const body = await request.json().catch(() => ({}));
   const shouldShare = body.share === true;
+  console.info("quest_complete", {
+    questId,
+    userId: user.id,
+    share: shouldShare,
+    recurrence: quest.recurrence,
+  });
 
   // Record completion
   const [completion] = await db

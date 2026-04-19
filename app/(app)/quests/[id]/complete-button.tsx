@@ -15,6 +15,7 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
   const [completed, setCompleted] = useState(isCompleted);
   const [loading, setLoading] = useState(false);
   const [showXp, setShowXp] = useState(false);
+  const [shareToast, setShareToast] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [showProofForm, setShowProofForm] = useState(false);
@@ -39,6 +40,10 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
       setCompleted(true);
       setShowXp(true);
       setShowSharePrompt(false);
+      if (share) {
+        setShareToast("Shared to party feed");
+        setTimeout(() => setShareToast(null), 3000);
+      }
       confetti({
         particleCount: 100,
         spread: 70,
@@ -187,6 +192,12 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
               Complete Privately
             </button>
           </div>
+        </div>
+      )}
+
+      {shareToast && (
+        <div className="badge" style={{ alignSelf: "flex-start", color: "var(--success)", background: "rgba(16, 185, 129, 0.12)", border: "1px solid rgba(16, 185, 129, 0.3)" }}>
+          {shareToast}
         </div>
       )}
 
