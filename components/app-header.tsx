@@ -2,7 +2,12 @@
 import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { MessageCircle, Sun, Moon, User } from "lucide-react";
+import { MessageCircle, Sun, Moon, User, Download } from "lucide-react";
+
+type InstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
 
 interface AppHeaderProps {
   xp?: number;
@@ -17,6 +22,8 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(unreadMessages);
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -71,6 +78,40 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
     window.addEventListener("resize", close);
     return () => window.removeEventListener("resize", close);
   }, [menuOpen]);
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches;
+    const isIosStandalone = (window.navigator as any).standalone;
+    setIsInstalled(Boolean(isStandalone || isIosStandalone));
+
+    function handleBeforeInstall(event: Event) {
+      event.preventDefault();
+      setInstallPrompt(event as InstallPromptEvent);
+    }
+
+    function handleInstalled() {
+      setIsInstalled(true);
+      setInstallPrompt(null);
+    }
+
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+    window.addEventListener("appinstalled", handleInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
+  }, []);
+
+  async function handleInstall() {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const choice = await installPrompt.userChoice;
+    if (choice.outcome === "accepted") {
+      setInstallPrompt(null);
+      setIsInstalled(true);
+    }
+  }
 
   return (
     <header className="app-header">
@@ -138,6 +179,12 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
             <User size={16} />
             <span>Me</span>
           </Link>
+          {installPrompt && !isInstalled && (
+            <button type="button" className="app-menu-item" onClick={handleInstall}>
+              <Download size={16} />
+              <span>Install app</span>
+            </button>
+          )}
           <button
             type="button"
             className="app-menu-item"
