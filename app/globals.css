@@ -492,6 +492,10 @@ p {
   flex-wrap: wrap;
 }
 
+.app-header-actions {
+  margin-left: auto;
+}
+
 .app-actions-row {
   display: flex;
   align-items: center;
@@ -500,13 +504,20 @@ p {
 
 .app-menu-button {
   display: none;
-  background: transparent;
-  border: none;
-  box-shadow: none;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .app-menu-button:hover {
-  background: transparent;
+  background: transparent !important;
+}
+
+.app-menu-button.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 0;
 }
 
 .app-message {
@@ -912,6 +923,23 @@ textarea.input { resize: vertical; min-height: 100px; }
 }
 
 @media (max-width: 520px) {
+  .app-header {
+    flex-wrap: nowrap;
+  }
+
+  .app-header-actions {
+    gap: var(--space-2);
+    flex: 0 1 auto;
+  }
+
+  .app-xp {
+    min-width: 0;
+  }
+
+  .app-xp-text {
+    font-size: 0.7rem;
+  }
+
   .app-actions-row {
     display: none;
   }
