@@ -44,7 +44,10 @@ export async function GET() {
     else pending.push(entry);
   }
 
-  return NextResponse.json({ friends, pending });
+  return NextResponse.json(
+    { friends, pending },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }
 
 export async function POST(request: Request) {

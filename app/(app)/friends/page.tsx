@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { UserPlus, Check, X, Search } from "lucide-react";
+import { UserPlus, Check, Clock, X, Search } from "lucide-react";
 
 interface FriendUser {
   id: string;
@@ -37,10 +37,24 @@ export default function FriendsPage() {
   async function searchUsers(q: string) {
     if (!q.trim()) { setSearchResults([]); return; }
     setSearching(true);
-    const res = await fetch(`/api/friends/search?q=${encodeURIComponent(q)}`);
-    const data = await res.json();
-    setSearchResults(data.users ?? []);
-    setSearching(false);
+    try {
+      const res = await fetch(`/api/friends/search?q=${encodeURIComponent(q)}`);
+      if (!res.ok) {
+        setSearchResults([]);
+        return;
+      }
+      const text = await res.text();
+      if (!text) {
+        setSearchResults([]);
+        return;
+      }
+      const data = JSON.parse(text);
+      setSearchResults(data.users ?? []);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
   }
 
   async function sendRequest(userId: string) {
@@ -49,7 +63,9 @@ export default function FriendsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ friendId: userId }),
     });
-    setSearchResults((r) => r.filter((u) => u.id !== userId));
+    setSearchResults((r) =>
+      r.map((u) => (u.id === userId ? { ...u, status: "pending", role: "sender" } : u))
+    );
     fetchFriends();
   }
 
@@ -97,9 +113,19 @@ export default function FriendsPage() {
                   </Link>
                   <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Lv {u.level} · {u.xp} XP</div>
                 </div>
-                <button className="btn btn-primary btn-sm" onClick={() => sendRequest(u.id)}>
-                  <UserPlus size={14} /> Add
-                </button>
+                {u.status === "accepted" ? (
+                  <div className="badge badge-completed" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <Check size={12} /> Friends
+                  </div>
+                ) : u.status === "pending" ? (
+                  <div className="badge badge-one-time" style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <Clock size={12} /> Pending
+                  </div>
+                ) : (
+                  <button className="btn btn-primary btn-sm" onClick={() => sendRequest(u.id)}>
+                    <UserPlus size={14} /> Add
+                  </button>
+                )}
               </div>
             ))}
           </div>
