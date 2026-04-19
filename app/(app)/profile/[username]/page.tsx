@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { users, sidequests, friendships, achievements } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import Link from "next/link";
@@ -30,9 +30,11 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
   if (!isSelf) {
     const friendRecord = await db.query.friendships.findFirst({
       where: and(
-        eq(friendships.userId, currentUser.id),
-        eq(friendships.friendId, profileUser.id),
-        eq(friendships.status, "accepted")
+        eq(friendships.status, "accepted"),
+        or(
+          and(eq(friendships.userId, currentUser.id), eq(friendships.friendId, profileUser.id)),
+          and(eq(friendships.userId, profileUser.id), eq(friendships.friendId, currentUser.id))
+        )
       )
     });
     isFriend = !!friendRecord;
