@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { users, sidequests, questMembers } from "@/db/schema";
-import { eq, and, desc, gte } from "drizzle-orm";
+import { users, sidequests, questMembers, questCompletions } from "@/db/schema";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 
@@ -24,51 +24,54 @@ export async function GET(request: Request) {
     .orderBy(desc(sidequests.createdAt));
 
   const now = new Date();
-  
-  function getStartOfPeriod(recur: string): Date {
-    const d = new Date(now);
-    d.setHours(0,0,0,0);
-    if (recur === "daily") return d;
-    if (recur === "weekly") { d.setDate(d.getDate() - d.getDay()); return d; }
-    if (recur === "monthly") { d.setDate(1); return d; }
-    if (recur === "yearly") { d.setMonth(0, 1); return d; }
-    return new Date(0); // one-time basically means forever
+
+  function addMonths(date: Date, months: number) {
+    const d = new Date(date);
+    d.setMonth(d.getMonth() + months);
+    return d;
   }
 
-  const recurringQuests = myQuests.filter((q) => q.recurrence !== "one-time");
-  const startsByRecurrence = {
-    daily: getStartOfPeriod("daily"),
-    weekly: getStartOfPeriod("weekly"),
-    monthly: getStartOfPeriod("monthly"),
-    yearly: getStartOfPeriod("yearly"),
-  } as const;
+  function addYears(date: Date, years: number) {
+    const d = new Date(date);
+    d.setFullYear(d.getFullYear() + years);
+    return d;
+  }
 
-  const minStart = recurringQuests.length
-    ? Object.values(startsByRecurrence).reduce((min, d) => (d < min ? d : min))
-    : new Date(now.getTime());
+  function getNextAvailableAt(recur: string, lastCompletedAt: Date) {
+    if (recur === "daily") return new Date(lastCompletedAt.getTime() + 24 * 60 * 60 * 1000);
+    if (recur === "weekly") return new Date(lastCompletedAt.getTime() + 7 * 24 * 60 * 60 * 1000);
+    if (recur === "monthly") return addMonths(lastCompletedAt, 1);
+    if (recur === "yearly") return addYears(lastCompletedAt, 1);
+    return null;
+  }
 
-  const recentCompletions = recurringQuests.length
-    ? await db.query.questCompletions.findMany({
-        where: (qc, { eq, and, gte }) => and(eq(qc.userId, user.id), gte(qc.completedAt, minStart)),
-      })
+  const questIds = myQuests.map((q) => q.id);
+  const completions = questIds.length
+    ? await db
+        .select({ questId: questCompletions.questId, completedAt: questCompletions.completedAt })
+        .from(questCompletions)
+        .where(and(eq(questCompletions.userId, user.id), inArray(questCompletions.questId, questIds)))
+        .orderBy(desc(questCompletions.completedAt))
     : [];
 
   const latestCompletionByQuest = new Map<string, Date>();
-  for (const c of recentCompletions) {
-    const prev = latestCompletionByQuest.get(c.questId);
-    if (!prev || c.completedAt > prev) {
+  for (const c of completions) {
+    if (!latestCompletionByQuest.has(c.questId)) {
       latestCompletionByQuest.set(c.questId, c.completedAt);
     }
   }
 
   const processedQuests = myQuests.map((q) => {
     let computedStatus = q.status;
-    if (computedStatus === "active" && q.recurrence !== "one-time") {
-      const startOfPeriod = startsByRecurrence[q.recurrence as keyof typeof startsByRecurrence];
-      const lastCompletedAt = latestCompletionByQuest.get(q.id);
-      const isCompletedRecently = Boolean(lastCompletedAt && lastCompletedAt >= startOfPeriod);
-      if (isCompletedRecently) {
+    const lastCompletedAt = latestCompletionByQuest.get(q.id);
+    if (computedStatus === "active" && lastCompletedAt) {
+      if (q.recurrence === "one-time") {
         computedStatus = "completed";
+      } else {
+        const nextAvailableAt = getNextAvailableAt(q.recurrence, lastCompletedAt);
+        if (nextAvailableAt && now < nextAvailableAt) {
+          computedStatus = "completed";
+        }
       }
     }
     return { ...q, status: computedStatus };
