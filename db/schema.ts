@@ -15,6 +15,7 @@ export const recurrenceEnum = pgEnum("recurrence", [
   "weekly",
   "monthly",
   "yearly",
+  "lifetime",
   "one-time",
 ]);
 

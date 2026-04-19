@@ -412,6 +412,7 @@ p {
 .badge-weekly   { background: rgba(139, 92, 246, 0.15); color: var(--xp-purple-light); }
 .badge-monthly  { background: rgba(245, 158, 11, 0.15); color: var(--streak-amber-light); }
 .badge-yearly   { background: rgba(16, 185, 129, 0.15); color: var(--success-light); }
+.badge-lifetime { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
 .badge-one-time { background: rgba(148, 163, 184, 0.1); color: var(--text-secondary); }
 .badge-completed { background: rgba(16, 185, 129, 0.15); color: var(--success-light); }
 .badge-active   { background: rgba(59, 130, 246, 0.15); color: var(--quest-blue-light); }

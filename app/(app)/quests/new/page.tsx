@@ -10,6 +10,7 @@ const RECURRENCES = [
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
   { value: "yearly", label: "Yearly" },
+  { value: "lifetime", label: "Lifetime" },
   { value: "one-time", label: "One-time" },
 ];
 

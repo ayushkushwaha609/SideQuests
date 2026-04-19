@@ -64,7 +64,7 @@ export async function GET(request: Request) {
     let computedStatus = q.status;
     const lastCompletedAt = latestCompletionByQuest.get(q.id);
     if (computedStatus === "active" && lastCompletedAt) {
-      if (q.recurrence === "one-time") {
+      if (q.recurrence === "one-time" || q.recurrence === "lifetime") {
         computedStatus = "completed";
       } else {
         const startOfPeriod = getStartOfPeriod(q.recurrence);
@@ -101,6 +101,7 @@ export async function POST(request: Request) {
     weekly: 50,
     monthly: 100,
     yearly: 500,
+    lifetime: 1000,
     "one-time": 25,
   };
 

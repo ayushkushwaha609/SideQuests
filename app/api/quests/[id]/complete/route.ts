@@ -50,7 +50,7 @@ export async function POST(
   });
 
   if (lastCompletion) {
-    if (quest.recurrence === "one-time") {
+    if (quest.recurrence === "one-time" || quest.recurrence === "lifetime") {
       return NextResponse.json({ error: "Already completed" }, { status: 409 });
     }
     const startOfPeriod = getStartOfPeriod(quest.recurrence);
@@ -69,7 +69,7 @@ export async function POST(
     imageUrl: body.imageUrl ?? null,
   });
 
-  if (quest.recurrence === "one-time") {
+  if (quest.recurrence === "one-time" || quest.recurrence === "lifetime") {
     await db.update(sidequests).set({ status: "completed" }).where(eq(sidequests.id, quest.id));
   }
 

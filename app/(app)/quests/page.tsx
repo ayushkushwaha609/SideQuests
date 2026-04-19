@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle2, Circle, Users, Zap, ChevronRight } from "lucide-react";
 
-type Recurrence = "daily" | "weekly" | "monthly" | "yearly" | "one-time";
+type Recurrence = "daily" | "weekly" | "monthly" | "yearly" | "lifetime" | "one-time";
 
 interface Quest {
   id: string;
@@ -23,6 +23,7 @@ const TABS: { label: string; value: Recurrence | "all" }[] = [
   { label: "Weekly", value: "weekly" },
   { label: "Monthly", value: "monthly" },
   { label: "Yearly", value: "yearly" },
+  { label: "Lifetime", value: "lifetime" },
 ];
 
 export default function QuestsPage() {
