@@ -41,6 +41,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   // For Public feed: hide Add button if any relationship exists (accepted or pending)
   const allConnectedIds = allFriendships
     .map(f => f.userId === user.id ? f.friendId : f.userId);
+  const displayName = user.displayName ?? user.username ?? "Adventurer";
+  const friendsCount = acceptedFriendIds.length;
 
   // -----------------------------------------------------
   // TAB: FRIENDS ACTIVITY
@@ -104,7 +106,53 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-      {/* Streak overview */}
+      <section className="card" style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "var(--space-4)",
+        background: "linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(96, 165, 250, 0.12))",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "var(--space-4)" }}>
+          <div>
+            <div className="label-mono">Questboard</div>
+            <h1 style={{ marginTop: "var(--space-2)" }}>Welcome back, {displayName}</h1>
+            <p style={{ marginTop: "var(--space-2)", maxWidth: 320 }}>
+              Pick your next quest, squad up with friends, and keep the streak alive.
+            </p>
+          </div>
+          <div className="card" style={{
+            padding: "var(--space-3)",
+            minWidth: 120,
+            textAlign: "center",
+            background: "var(--bg-surface)",
+          }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Level</div>
+            <div style={{ fontSize: "1.6rem", fontWeight: "var(--weight-bold)", color: "var(--xp-purple)" }}>{user.level}</div>
+            <div style={{ fontSize: "0.75rem", color: "var(--text-secondary)" }}>{user.xp} XP</div>
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "var(--space-3)" }}>
+          <div className="card" style={{ padding: "var(--space-3)", background: "var(--bg-elevated)" }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Party</div>
+            <div style={{ fontWeight: "var(--weight-bold)", fontSize: "1.1rem" }}>{friendsCount} friends</div>
+          </div>
+          <div className="card" style={{ padding: "var(--space-3)", background: "var(--bg-elevated)" }}>
+            <div style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Streak</div>
+            <div style={{ fontWeight: "var(--weight-bold)", fontSize: "1.1rem" }}>{user.streakCount} days</div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+          <Link href="/quests/new" className="btn btn-primary btn-sm">
+            Start a quest
+          </Link>
+          <Link href="/friends" className="btn btn-secondary btn-sm">
+            Find a party
+          </Link>
+        </div>
+      </section>
+
       {user.streakCount > 0 && (
         <div className="streak-banner">
           <span style={{ fontSize: "2rem" }}>🔥</span>
@@ -125,10 +173,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       {/* Tabs */}
       <div className="tab-bar">
         <Link href="/?tab=friends" className={`tab-item ${activeTab === "friends" ? "active" : ""}`} style={{ textDecoration: "none" }}>
-          Friends
+          Party Feed
         </Link>
         <Link href="/?tab=public" className={`tab-item ${activeTab === "public" ? "active" : ""}`} style={{ textDecoration: "none" }}>
-          Public World
+          Global Arcade
         </Link>
       </div>
 
@@ -139,7 +187,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <div className="seamless-item" style={{ textAlign: "center", padding: "var(--space-6)" }}>
               <div style={{ fontSize: "2rem", marginBottom: "var(--space-3)" }}>👥</div>
               <p style={{ marginBottom: "var(--space-3)" }}>
-                Add friends to see their detailed quest activity here.
+                Your party feed is empty. Send a friend request to start the co-op grind.
               </p>
               <Link href="/friends" className="btn btn-secondary btn-sm">
                 Find friends
@@ -237,7 +285,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         <section>
           {publicQuests.length === 0 ? (
             <div className="seamless-item" style={{ textAlign: "center", padding: "var(--space-6)" }}>
-              <p>No public quests found in the world yet.</p>
+              <p>The global arcade is quiet right now. Check back soon for fresh quests.</p>
             </div>
           ) : (
             <div className="seamless-stack">
