@@ -45,25 +45,29 @@ export default function QuestRepository({ questId }: { questId: string }) {
 
   useEffect(() => {
     if (!pusherClient) return;
-    const channel = pusherClient.subscribe(`quest-activity-${questId}`);
+    const channel = pusherClient.subscribe(`private-quest-activity-${questId}`);
 
     channel.bind("new-artifact", (artifact: RepoArtifact) => {
       setArtifacts((prev) => {
         if (prev.find((item) => item.id === artifact.id)) return prev;
+        if (!artifact.user) {
+          fetchRepository(null, true);
+          return prev;
+        }
         return [artifact, ...prev];
       });
     });
 
     return () => {
-      pusherClient.unsubscribe(`quest-activity-${questId}`);
+      pusherClient.unsubscribe(`private-quest-activity-${questId}`);
     };
   }, [questId]);
 
-  async function fetchRepository(cursor?: string | null) {
+  async function fetchRepository(cursor?: string | null, silent = false) {
     const isInitial = !cursor;
-    if (isInitial) {
+    if (isInitial && !silent) {
       setLoading(true);
-    } else {
+    } else if (!isInitial) {
       setLoadingMore(true);
     }
 
@@ -79,7 +83,9 @@ export default function QuestRepository({ questId }: { questId: string }) {
 
     setHasMore(Boolean(data.hasMore));
     setNextCursor(data.nextCursor ?? null);
-    setLoading(false);
+    if (!silent) {
+      setLoading(false);
+    }
     setLoadingMore(false);
   }
 

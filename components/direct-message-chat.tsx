@@ -49,7 +49,7 @@ export default function DirectMessageChat({
 
   useEffect(() => {
     // Subscribe to Pusher channel for this chat
-    const channel = pusherClient.subscribe(`chat-${chatId}`);
+    const channel = pusherClient.subscribe(`private-chat-${chatId}`);
 
     channel.bind("new-message", (data: any) => {
       // Pusher passes dates as strings, parse it
@@ -70,7 +70,7 @@ export default function DirectMessageChat({
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "instant" }), 100);
 
     return () => {
-      pusherClient.unsubscribe(`chat-${chatId}`);
+      pusherClient.unsubscribe(`private-chat-${chatId}`);
     };
   }, [chatId]);
 

@@ -32,7 +32,7 @@ export default function QuestChat({ questId, currentUser, initialMessages = [] }
     if (!expanded) return;
 
     const chatId = `quest_${questId}`;
-    const channel = pusherClient.subscribe(`chat-${chatId}`);
+    const channel = pusherClient.subscribe(`private-chat-${chatId}`);
 
     channel.bind("new-message", (data: any) => {
       const newMsg: ChatMessage = {
@@ -50,7 +50,7 @@ export default function QuestChat({ questId, currentUser, initialMessages = [] }
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "instant" }), 100);
 
     return () => {
-      pusherClient.unsubscribe(`chat-${chatId}`);
+      pusherClient.unsubscribe(`private-chat-${chatId}`);
     };
   }, [questId, expanded]);
 

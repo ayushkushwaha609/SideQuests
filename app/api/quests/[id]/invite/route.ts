@@ -69,7 +69,7 @@ export async function POST(
     url: `/quests/${quest.id}/invite`,
   });
 
-  await pusherServer.trigger(`quest-invites-${friendId}`, "invite-created", {
+  await pusherServer.trigger(`private-quest-invites-${friendId}`, "invite-created", {
     questId: quest.id,
     inviteStatus: "pending",
   });

@@ -59,7 +59,7 @@ export default function QuestsPage() {
 
   useEffect(() => {
     if (!pusherClient || !currentUserId || activeTab !== "invites") return;
-    const channel = pusherClient.subscribe(`quest-invites-${currentUserId}`);
+    const channel = pusherClient.subscribe(`private-quest-invites-${currentUserId}`);
 
     channel.bind("invite-created", () => {
       fetchInvites();
@@ -70,7 +70,7 @@ export default function QuestsPage() {
     });
 
     return () => {
-      pusherClient.unsubscribe(`quest-invites-${currentUserId}`);
+      pusherClient.unsubscribe(`private-quest-invites-${currentUserId}`);
     };
   }, [activeTab, currentUserId]);
 

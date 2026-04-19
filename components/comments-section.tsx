@@ -33,7 +33,7 @@ export default function CommentsSection({ questId }: { questId: string }) {
 
   useEffect(() => {
     if (!pusherClient) return;
-    const channel = pusherClient.subscribe(`quest-comments-${questId}`);
+    const channel = pusherClient.subscribe(`private-quest-comments-${questId}`);
 
     channel.bind("new-comment", (comment: CommentData) => {
       setComments((prev) => {
@@ -43,7 +43,7 @@ export default function CommentsSection({ questId }: { questId: string }) {
     });
 
     return () => {
-      pusherClient.unsubscribe(`quest-comments-${questId}`);
+      pusherClient.unsubscribe(`private-quest-comments-${questId}`);
     };
   }, [questId]);
 

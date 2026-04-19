@@ -25,7 +25,7 @@ export default function QuestInviteList({
 
   useEffect(() => {
     if (!pusherClient) return;
-    const channel = pusherClient.subscribe(`quest-invite-status-${questId}`);
+    const channel = pusherClient.subscribe(`private-quest-invite-status-${questId}`);
 
     channel.bind("invite-status", (data: { userId: string; status: "accepted" | "declined" | "pending" }) => {
       setItems((prev) => prev.map((item) =>
@@ -34,7 +34,7 @@ export default function QuestInviteList({
     });
 
     return () => {
-      pusherClient.unsubscribe(`quest-invite-status-${questId}`);
+      pusherClient.unsubscribe(`private-quest-invite-status-${questId}`);
     };
   }, [questId]);
 

@@ -38,13 +38,13 @@ export async function PATCH(
       url: `/quests/${quest.id}/invite`,
     });
 
-    await pusherServer.trigger(`quest-invite-status-${quest.id}`, "invite-status", {
+    await pusherServer.trigger(`private-quest-invite-status-${quest.id}`, "invite-status", {
       userId: user.id,
       status: updated.inviteStatus,
     });
   }
 
-  await pusherServer.trigger(`quest-invites-${user.id}`, "invite-updated", {
+  await pusherServer.trigger(`private-quest-invites-${user.id}`, "invite-updated", {
     inviteId: updated.id,
     status: updated.inviteStatus,
   });

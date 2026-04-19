@@ -98,7 +98,7 @@ export async function POST(req: Request) {
         .returning();
 
       if (artifact) {
-        await pusherServer.trigger(`quest-activity-${questId}`, "new-artifact", {
+        await pusherServer.trigger(`private-quest-activity-${questId}`, "new-artifact", {
           ...artifact,
           user: {
             id: user.id,
@@ -129,7 +129,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Trigger Pusher Event
-    await pusherServer.trigger(`chat-${chatId}`, "new-message", {
+    await pusherServer.trigger(`private-chat-${chatId}`, "new-message", {
       id: savedMessage.id,
       chatId: savedMessage.chatId,
       userId: savedMessage.userId,

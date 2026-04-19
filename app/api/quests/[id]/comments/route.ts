@@ -107,10 +107,10 @@ export async function POST(
     },
   };
 
-  await pusherServer.trigger(`quest-comments-${questId}`, "new-comment", commentPayload);
+  await pusherServer.trigger(`private-quest-comments-${questId}`, "new-comment", commentPayload);
 
   if (artifact) {
-    await pusherServer.trigger(`quest-activity-${questId}`, "new-artifact", {
+    await pusherServer.trigger(`private-quest-activity-${questId}`, "new-artifact", {
       ...artifact,
       user: {
         id: user.id,

@@ -90,7 +90,7 @@ export async function POST(
     .returning();
 
   if (artifact) {
-    await pusherServer.trigger(`quest-activity-${questId}`, "new-artifact", {
+    await pusherServer.trigger(`private-quest-activity-${questId}`, "new-artifact", {
       ...artifact,
       user: {
         id: user.id,
