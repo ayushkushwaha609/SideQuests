@@ -16,6 +16,7 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(unreadMessages);
   const xpForCurrentLevel = (level - 1) * 100;
   const xpForNextLevel = level * 100;
   const xpProgress = xp - xpForCurrentLevel;
@@ -38,6 +39,36 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
     document.documentElement.setAttribute("data-theme", theme);
     window.localStorage.setItem("theme", theme);
   }, [theme, mounted]);
+
+  useEffect(() => {
+    setUnreadCount(unreadMessages);
+  }, [unreadMessages]);
+
+  useEffect(() => {
+    let timer: number | undefined;
+
+    async function refreshUnread() {
+      try {
+        const res = await fetch("/api/messages/unread", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        setUnreadCount(Number(data.count ?? 0));
+      } catch {
+        // Ignore network errors; we'll retry on next interval.
+      }
+    }
+
+    refreshUnread();
+    timer = window.setInterval(refreshUnread, 15000);
+
+    const onFocus = () => refreshUnread();
+    window.addEventListener("focus", onFocus);
+
+    return () => {
+      if (timer) window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -80,18 +111,18 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
             <div className="xp-bar-fill" style={{ width: `${fillPercent}%` }} />
           </div>
         </div>
+        <Link
+          href="/messages"
+          className="icon-badge app-message"
+          style={{ color: "var(--text-muted)" }}
+          aria-label={unreadCount > 0 ? `Messages, ${unreadCount} unread` : "Messages"}
+        >
+          <MessageCircle size={20} />
+          {unreadCount > 0 && (
+            <span className="badge-pill" aria-hidden="true">{unreadCount > 9 ? "9+" : String(unreadCount)}</span>
+          )}
+        </Link>
         <div className="app-actions-row">
-          <Link
-            href="/messages"
-            className="icon-badge"
-            style={{ color: "var(--text-muted)" }}
-            aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : "Messages"}
-          >
-            <MessageCircle size={20} />
-            {unreadMessages > 0 && (
-              <span className="badge-pill" aria-hidden="true">{unreadLabel}</span>
-            )}
-          </Link>
           <button
             type="button"
             className="btn-icon theme-toggle"
@@ -117,15 +148,6 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
           <Link href="/profile" className="app-menu-item" onClick={() => setMenuOpen(false)}>
             <User size={16} />
             <span>Me</span>
-          </Link>
-          <Link href="/messages" className="app-menu-item" onClick={() => setMenuOpen(false)}>
-            <span className="icon-badge">
-              <MessageCircle size={16} />
-              {unreadMessages > 0 && (
-                <span className="badge-pill" aria-hidden="true">{unreadLabel}</span>
-              )}
-            </span>
-            <span>Messages</span>
           </Link>
           <button
             type="button"

@@ -496,6 +496,17 @@ p {
 
 .app-menu-button {
   display: none;
+  background: transparent;
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+.app-menu-button:hover {
+  background: var(--bg-elevated);
+}
+
+.app-message {
+  color: var(--text-muted);
 }
 
 .app-menu-panel {
@@ -908,6 +919,10 @@ textarea.input { resize: vertical; min-height: 100px; }
   .app-menu-panel {
     display: flex;
     flex-direction: column;
+  }
+
+  .app-message {
+    display: inline-flex;
   }
 }
 
