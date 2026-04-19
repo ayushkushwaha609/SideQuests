@@ -1,11 +1,10 @@
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
 import { users, sidequests, friendships, activities } from "@/db/schema";
-import { eq, and, or, desc, inArray, ne, lt } from "drizzle-orm";
+import { eq, and, or, desc, inArray, ne, lt, gte } from "drizzle-orm";
 import Link from "next/link";
-import { CheckCircle2, Star, Users, Zap, UserPlus } from "lucide-react";
 import { getUserOrCreate } from "@/lib/auth-sync";
-import CommentToggle from "@/components/comment-toggle";
+import ActivityCard from "@/components/activity-card";
 
 function timeAgo(date: Date): string {
   const now = new Date();
@@ -26,6 +25,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const hasValidCursor = cursor instanceof Date && !Number.isNaN(cursor.getTime());
   const pageSizeFriends = 20;
   const pageSizePublic = 30;
+  const sharedCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   // Shared Data: Get friend relationships
   const allFriendships = await db
@@ -63,6 +63,10 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       .leftJoin(users, eq(activities.userId, users.id))
       .where(and(
         inArray(activities.userId, acceptedFriendIds),
+        or(
+          ne(activities.type, "quest_completed"),
+          gte(activities.createdAt, sharedCutoff)
+        ),
         hasValidCursor ? lt(activities.createdAt, cursor!) : undefined
       ))
       .orderBy(desc(activities.createdAt))
@@ -94,6 +98,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       .where(and(
         eq(activities.isPublic, true),
         eq(activities.type, "quest_completed"),
+        gte(activities.createdAt, sharedCutoff),
         hasValidCursor ? lt(activities.createdAt, cursor!) : undefined
       ))
       .orderBy(desc(activities.createdAt))
@@ -199,72 +204,17 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <div className="seamless-stack">
               {recentActivity.map(({ activity, quest, actor }) => {
                 if (!actor) return null;
-                const displayName = actor.displayName ?? actor.username;
+                const timeLabel = timeAgo(activity.createdAt);
                 
                 return (
-                  <div key={activity.id} className="seamless-item animate-slide-up stagger-item">
-                    {/* Header */}
-                    <div className="flex items-center gap-1" style={{ gap: "var(--space-3)", marginBottom: "var(--space-3)" }}>
-                      <Link href={`/profile/${actor.username}`} style={{ textDecoration: "none" }}>
-                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--bg-elevated)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                          {actor.avatarUrl ? <img src={actor.avatarUrl} alt={actor.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>👤</span>}
-                        </div>
-                      </Link>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: "0.875rem", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                          <Link href={`/profile/${actor.username}`} style={{ fontWeight: "var(--weight-bold)", color: "var(--text-primary)", textDecoration: "none" }}>
-                            {displayName}
-                          </Link>
-                          <span style={{ color: "var(--text-secondary)" }}>
-                            {activity.type === "quest_completed" && "completed a quest ⚔️"}
-                            {activity.type === "achievement_earned" && `earned a badge 🏅`}
-                            {activity.type === "friend_joined" && "joined SideQuest!"}
-                          </span>
-                        </div>
-                        <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 2 }}>{timeAgo(activity.createdAt)}</div>
-                      </div>
-                    </div>
-
-                    {/* Quest Context Block */}
-                    {activity.type === "quest_completed" && quest && (
-                      <Link href={`/quests/${quest.id}`} className="quest-tile-link">
-                        <div className="quest-tile quest-tile-compact" style={{ display: "flex", gap: "var(--space-3)", marginTop: "var(--space-2)" }}>
-                          <span style={{ fontSize: "1.5rem" }}>{quest.coverEmoji}</span>
-                          <div>
-                            <div style={{ fontWeight: "var(--weight-semibold)", color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                              {quest.title}
-                            </div>
-                            {quest.description && (
-                              <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                                {quest.description}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-1" style={{ gap: "var(--space-2)", marginTop: 6 }}>
-                              <span className={`badge badge-${quest.recurrence}`}>{quest.recurrence}</span>
-                              <span style={{ color: "var(--xp-purple-light)", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 3 }}>
-                                <Zap size={11} fill="var(--xp-purple-light)" color="var(--xp-purple-light)" />
-                                {quest.xpReward} XP
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    )}
-
-                    {activity.type === "achievement_earned" && (
-                      <div className="quest-tile quest-tile-compact" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)", marginTop: "var(--space-2)" }}>
-                        <Star size={24} color="var(--streak-amber)" />
-                        <div style={{ fontWeight: "var(--weight-medium)", color: "var(--streak-amber-light)", fontSize: "0.95rem" }}>
-                          New Achievement Unlocked
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Comments */}
-                    {activity.type === "quest_completed" && quest && (
-                      <CommentToggle questId={quest.id} />
-                    )}
-                  </div>
+                  <ActivityCard
+                    key={activity.id}
+                    activityType={activity.type}
+                    timeLabel={timeLabel}
+                    actor={actor}
+                    quest={quest}
+                    variant="friends"
+                  />
                 );
               })}
             </div>
@@ -293,53 +243,16 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             <div className="seamless-stack">
               {publicActivity.map(({ activity, quest, actor }) => {
                 if (!actor) return null;
-                const actorName = actor.displayName ?? actor.username;
+                const timeLabel = timeAgo(activity.createdAt);
                 return (
-                  <div key={activity.id} className="seamless-item animate-slide-up stagger-item">
-                    <div className="flex items-center gap-1" style={{ gap: "var(--space-3)", marginBottom: "var(--space-3)" }}>
-                      <Link href={`/profile/${actor.username}`} style={{ textDecoration: "none" }}>
-                        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--bg-elevated)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                          {actor.avatarUrl ? <img src={actor.avatarUrl} alt={actor.username} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <span>👤</span>}
-                        </div>
-                      </Link>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: "0.875rem", display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-                          <Link href={`/profile/${actor.username}`} style={{ fontWeight: "var(--weight-bold)", color: "var(--text-primary)", textDecoration: "none" }}>
-                            {actorName}
-                          </Link>
-                          <span style={{ color: "var(--text-secondary)" }}>shared a quest win ⚔️</span>
-                        </div>
-                        <div style={{ color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 2 }}>{timeAgo(activity.createdAt)}</div>
-                      </div>
-                    </div>
-
-                    {quest && (
-                      <Link href={`/quests/${quest.id}`} className="quest-tile-link">
-                        <div className="quest-tile quest-tile-compact" style={{ display: "flex", gap: "var(--space-3)", marginTop: "var(--space-2)" }}>
-                          <span style={{ fontSize: "1.5rem" }}>{quest.coverEmoji}</span>
-                          <div>
-                            <div style={{ fontWeight: "var(--weight-semibold)", color: "var(--text-primary)", fontSize: "0.95rem" }}>
-                              {quest.title}
-                            </div>
-                            {quest.description && (
-                              <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: 4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                                {quest.description}
-                              </div>
-                            )}
-                            <div className="flex items-center gap-1" style={{ gap: "var(--space-2)", marginTop: 6 }}>
-                              <span className={`badge badge-${quest.recurrence}`}>{quest.recurrence}</span>
-                              <span style={{ color: "var(--xp-purple-light)", fontSize: "0.75rem", display: "flex", alignItems: "center", gap: 3 }}>
-                                <Zap size={11} fill="var(--xp-purple-light)" color="var(--xp-purple-light)" />
-                                {quest.xpReward} XP
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    )}
-
-                    {quest && <CommentToggle questId={quest.id} />}
-                  </div>
+                  <ActivityCard
+                    key={activity.id}
+                    activityType={activity.type}
+                    timeLabel={timeLabel}
+                    actor={actor}
+                    quest={quest}
+                    variant="public"
+                  />
                 );
               })}
             </div>
