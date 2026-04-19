@@ -106,13 +106,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
   return (
     <div className="animate-fade-in" style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
-      <section className="card" style={{
+      <section className="card hero-card" style={{
         display: "flex",
         flexDirection: "column",
         gap: "var(--space-4)",
-        background: "linear-gradient(135deg, rgba(45, 212, 191, 0.2), rgba(96, 165, 250, 0.12))",
+        background: "linear-gradient(135deg, rgba(45, 212, 191, 0.22), rgba(96, 165, 250, 0.16))",
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "var(--space-4)" }}>
+        <div className="hero-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "var(--space-4)" }}>
           <div>
             <div className="label-mono">Questboard</div>
             <h1 style={{ marginTop: "var(--space-2)" }}>Welcome back, {displayName}</h1>
@@ -120,7 +120,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
               Pick your next quest, squad up with friends, and keep the streak alive.
             </p>
           </div>
-          <div className="card" style={{
+          <div className="card hero-level" style={{
             padding: "var(--space-3)",
             minWidth: 120,
             textAlign: "center",

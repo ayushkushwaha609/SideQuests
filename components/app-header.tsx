@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { Zap, MessageCircle, Sun, Moon } from "lucide-react";
+import { Zap, MessageCircle, Sun, Moon, Menu, X, User } from "lucide-react";
 
 interface AppHeaderProps {
   xp?: number;
@@ -12,9 +12,10 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessages = 0 }: AppHeaderProps) {
-    const unreadLabel = unreadMessages > 9 ? "9+" : String(unreadMessages);
+  const unreadLabel = unreadMessages > 9 ? "9+" : String(unreadMessages);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [mounted, setMounted] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const xpForCurrentLevel = (level - 1) * 100;
   const xpForNextLevel = level * 100;
   const xpProgress = xp - xpForCurrentLevel;
@@ -37,6 +38,13 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
     document.documentElement.setAttribute("data-theme", theme);
     window.localStorage.setItem("theme", theme);
   }, [theme, mounted]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const close = () => setMenuOpen(false);
+    window.addEventListener("resize", close);
+    return () => window.removeEventListener("resize", close);
+  }, [menuOpen]);
 
   return (
     <header className="app-header">
@@ -72,28 +80,68 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
             <div className="xp-bar-fill" style={{ width: `${fillPercent}%` }} />
           </div>
         </div>
-        <Link
-          href="/messages"
-          className="icon-badge"
-          style={{ color: "var(--text-muted)" }}
-          aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : "Messages"}
-        >
-          <MessageCircle size={20} />
-          {unreadMessages > 0 && (
-            <span className="badge-pill" aria-hidden="true">{unreadLabel}</span>
-          )}
-        </Link>
+        <div className="app-actions-row">
+          <Link
+            href="/messages"
+            className="icon-badge"
+            style={{ color: "var(--text-muted)" }}
+            aria-label={unreadMessages > 0 ? `Messages, ${unreadMessages} unread` : "Messages"}
+          >
+            <MessageCircle size={20} />
+            {unreadMessages > 0 && (
+              <span className="badge-pill" aria-hidden="true">{unreadLabel}</span>
+            )}
+          </Link>
+          <button
+            type="button"
+            className="btn-icon theme-toggle"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          >
+            {mounted && theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
+          <UserButton userProfileMode="navigation" userProfileUrl="/settings" />
+        </div>
         <button
           type="button"
-          className="btn-icon theme-toggle"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          title={theme === "dark" ? "Light mode" : "Dark mode"}
+          className="btn-icon app-menu-button"
+          onClick={() => setMenuOpen((open) => !open)}
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
         >
-          {mounted && theme === "light" ? <Moon size={18} /> : <Sun size={18} />}
+          {menuOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
-        <UserButton userProfileMode="navigation" userProfileUrl="/settings" />
       </div>
+      {menuOpen && (
+        <div className="app-menu-panel" role="dialog" aria-label="Navigation menu">
+          <Link href="/profile" className="app-menu-item" onClick={() => setMenuOpen(false)}>
+            <User size={16} />
+            <span>Me</span>
+          </Link>
+          <Link href="/messages" className="app-menu-item" onClick={() => setMenuOpen(false)}>
+            <span className="icon-badge">
+              <MessageCircle size={16} />
+              {unreadMessages > 0 && (
+                <span className="badge-pill" aria-hidden="true">{unreadLabel}</span>
+              )}
+            </span>
+            <span>Messages</span>
+          </Link>
+          <button
+            type="button"
+            className="app-menu-item"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          >
+            {mounted && theme === "light" ? <Moon size={16} /> : <Sun size={16} />}
+            <span>{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+          </button>
+          <div className="app-menu-divider" />
+          <div className="app-menu-item app-menu-account">
+            <span>Account</span>
+            <UserButton userProfileMode="navigation" userProfileUrl="/settings" />
+          </div>
+        </div>
+      )}
     </header>
   );
 }
