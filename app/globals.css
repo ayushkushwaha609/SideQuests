@@ -16,6 +16,13 @@
   --bg-elevated: #1a2438;
   --bg-card: #1b2434;
   --bg-overlay: rgba(10, 15, 26, 0.92);
+  --seamless-bg: rgba(10, 15, 26, 0.55);
+  --seamless-bg-hover: rgba(255, 255, 255, 0.05);
+  --seamless-shadow-hover: 0 0 0 1px rgba(139, 92, 246, 0.18), 0 12px 30px rgba(10, 16, 30, 0.35);
+  --quest-tile-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  --quest-tile-bg-hover: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
+  --quest-tile-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  --quest-tile-shadow-hover: 0 0 0 1px rgba(139, 92, 246, 0.18), 0 14px 28px rgba(10, 16, 30, 0.35);
 
   /* Background texture layers */
   --bg-grid: rgba(148, 163, 184, 0.08);
@@ -109,7 +116,14 @@
   --bg-surface: #ffffff;
   --bg-elevated: #efece6;
   --bg-card: #ffffff;
-  --bg-overlay: rgba(246, 246, 243, 0.95);
+  --bg-overlay: rgba(246, 246, 243, 0.78);
+  --seamless-bg: rgba(246, 246, 243, 0.85);
+  --seamless-bg-hover: rgba(255, 255, 255, 0.95);
+  --seamless-shadow-hover: 0 0 0 1px rgba(230, 0, 35, 0.08), 0 12px 24px rgba(33, 25, 34, 0.12);
+  --quest-tile-bg: rgba(246, 246, 243, 0.85);
+  --quest-tile-bg-hover: rgba(255, 255, 255, 0.95);
+  --quest-tile-shadow: inset 0 0 0 1px rgba(33, 25, 34, 0.08);
+  --quest-tile-shadow-hover: 0 0 0 1px rgba(230, 0, 35, 0.08), 0 12px 24px rgba(33, 25, 34, 0.12);
 
   --bg-grid: rgba(33, 25, 34, 0.08);
   --bg-glow-1: rgba(230, 0, 35, 0.12);
@@ -306,17 +320,17 @@ p {
 }
 
 .quest-tile {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  background: var(--quest-tile-bg);
   border: none;
   border-radius: 18px;
   padding: var(--space-4);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  box-shadow: var(--quest-tile-shadow);
   transition: background var(--transition-base), box-shadow var(--transition-base);
 }
 
 .quest-tile:hover {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.03));
-  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.18), 0 14px 28px rgba(10, 16, 30, 0.35);
+  background: var(--quest-tile-bg-hover);
+  box-shadow: var(--quest-tile-shadow-hover);
 }
 
 .quest-tile-compact {
@@ -345,7 +359,7 @@ p {
 }
 
 .seamless-item {
-  background: rgba(10, 15, 26, 0.55);
+  background: var(--seamless-bg);
   border: none;
   border-radius: 16px;
   padding: var(--space-4);
@@ -356,8 +370,8 @@ p {
 }
 
 .seamless-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.18), 0 12px 30px rgba(10, 16, 30, 0.35);
+  background: var(--seamless-bg-hover);
+  box-shadow: var(--seamless-shadow-hover);
   transform: translateY(-1px);
 }
 
@@ -485,15 +499,19 @@ p {
   backdrop-filter: blur(26px);
   -webkit-backdrop-filter: blur(26px);
   border-bottom: 2px solid var(--border);
-  display: flex;
+  display: grid;
   align-items: center;
-  justify-content: space-between;
+  grid-template-columns: auto 1fr auto;
   gap: var(--space-2);
-  flex-wrap: wrap;
+  position: relative;
 }
 
 .app-header-actions {
-  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  justify-self: end;
 }
 
 .app-actions-row {
@@ -507,10 +525,19 @@ p {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  border-radius: 0;
+  transform: translateY(8px);
 }
 
 .app-menu-button:hover {
   background: transparent !important;
+  transform: translateY(7px);
+  box-shadow: none;
+}
+
+.app-menu-button:active {
+  transform: translateY(9px);
+  box-shadow: none;
 }
 
 .app-menu-button.btn-icon {
@@ -520,13 +547,21 @@ p {
   border-radius: 0;
 }
 
+.app-menu-button:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .app-message {
   color: var(--text-muted);
 }
 
 .app-menu-panel {
-  width: 100%;
-  margin-top: var(--space-2);
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: calc(var(--space-3) + env(safe-area-inset-right, 0px));
+  width: min(240px, 90vw);
+  margin-top: 0;
   padding: var(--space-3);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--bg-surface) 90%, transparent);
@@ -535,6 +570,8 @@ p {
   gap: var(--space-2);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-card);
+  z-index: 80;
 }
 
 .app-menu-item {
@@ -876,20 +913,34 @@ textarea.input { resize: vertical; min-height: 100px; }
 }
 
 .app-header-actions {
-  flex: 1;
+  flex: 0 0 auto;
   justify-content: flex-end;
+  align-items: center;
 }
 
 .app-title {
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.app-title-text {
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.app-title-icon {
+  font-size: 1.4rem;
 }
 
 @media (max-width: 380px) {
   .app-header-actions {
-    gap: var(--space-2);
-    flex-wrap: wrap;
-    width: 100%;
-    justify-content: space-between;
+    gap: var(--space-1);
+  }
+
+  .app-message {
+    display: none !important;
   }
 
   .app-xp {
@@ -913,23 +964,38 @@ textarea.input { resize: vertical; min-height: 100px; }
   }
 
   .app-title-text {
-    font-size: 0.8rem;
+    font-size: 0.76rem;
+    letter-spacing: 0.04em;
+  }
+
+  .app-title-icon {
+    font-size: 1.1rem;
   }
 
   .app-header .btn-icon {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .app-header {
+    padding: var(--space-2) calc(var(--space-3) + env(safe-area-inset-left, 0px)) var(--space-2) calc(var(--space-3) + env(safe-area-inset-right, 0px));
   }
 }
 
 @media (max-width: 520px) {
   .app-header {
-    flex-wrap: nowrap;
+    grid-template-columns: auto 1fr auto;
   }
 
   .app-header-actions {
     gap: var(--space-2);
-    flex: 0 1 auto;
+    align-items: center;
+  }
+
+  .app-title-text {
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+    overflow: visible;
   }
 
   .app-xp {
@@ -951,10 +1017,8 @@ textarea.input { resize: vertical; min-height: 100px; }
   .app-menu-panel {
     display: flex;
     flex-direction: column;
-  }
-
-  .app-message {
-    display: none;
+    right: calc(var(--space-2) + env(safe-area-inset-right, 0px));
+    width: min(220px, calc(100% - var(--space-4)));
   }
 
   .nav-messages {
@@ -963,6 +1027,12 @@ textarea.input { resize: vertical; min-height: 100px; }
 
   .nav-me {
     display: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .app-title-text {
+    font-size: 0.72rem;
   }
 }
 

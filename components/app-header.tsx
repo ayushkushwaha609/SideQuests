@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { Zap, MessageCircle, Sun, Moon, Menu, X, User } from "lucide-react";
+import { MessageCircle, Sun, Moon, User } from "lucide-react";
 
 interface AppHeaderProps {
   xp?: number;
@@ -17,11 +17,6 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(unreadMessages);
-  const xpForCurrentLevel = (level - 1) * 100;
-  const xpForNextLevel = level * 100;
-  const xpProgress = xp - xpForCurrentLevel;
-  const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-  const fillPercent = Math.min(100, Math.round((xpProgress / xpNeeded) * 100));
 
   useEffect(() => {
     setMounted(true);
@@ -80,14 +75,12 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
   return (
     <header className="app-header">
       <Link href="/" className="app-title" style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", textDecoration: "none" }}>
-        <span style={{ fontSize: "1.4rem" }}>⚔️</span>
+        <span className="app-title-icon">⚔️</span>
         <span
           className="app-title-text"
           style={{
             fontWeight: "var(--weight-bold)",
-            fontSize: "0.95rem",
             color: "var(--text-primary)",
-            letterSpacing: "0.08em",
             fontFamily: "var(--font-display)",
           }}
         >
@@ -96,21 +89,7 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
       </Link>
 
       <div className="app-header-actions" style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
-        {/* XP & level */}
-        <div className="app-xp" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px", minWidth: 100 }}>
-          <div className="app-xp-text" style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <Zap size={12} color="var(--xp-purple-light)" fill="var(--xp-purple-light)" />
-            <span style={{ fontSize: "0.75rem", fontWeight: "var(--weight-medium)", color: "var(--xp-purple-light)" }}>
-              Lv {level} · {xp} XP
-            </span>
-            {streak > 0 && (
-              <span style={{ fontSize: "0.75rem", marginLeft: 4 }}>🔥{streak}</span>
-            )}
-          </div>
-          <div className="xp-bar-track" style={{ width: 100 }}>
-            <div className="xp-bar-fill" style={{ width: `${fillPercent}%` }} />
-          </div>
-        </div>
+        {/* XP & level removed from header for small-screen clarity */}
         <Link
           href="/messages"
           className="icon-badge app-message"
@@ -140,7 +119,17 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
           onClick={() => setMenuOpen((open) => !open)}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
         >
-          {menuOpen ? <X size={18} /> : <Menu size={18} />}
+          <svg
+            className="pixel-icon"
+            width="18"
+            height="18"
+            viewBox="0 0 18 18"
+            aria-hidden="true"
+          >
+            <rect x="2" y="3" width="14" height="3" fill="currentColor" />
+            <rect x="2" y="8" width="14" height="3" fill="currentColor" />
+            <rect x="2" y="13" width="14" height="3" fill="currentColor" />
+          </svg>
         </button>
       </div>
       {menuOpen && (
