@@ -86,7 +86,10 @@ export async function GET(request: Request) {
     return { ...q, status: computedStatus };
   });
 
-  return NextResponse.json({ quests: processedQuests });
+  return NextResponse.json(
+    { quests: processedQuests },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }
 
 export async function POST(request: Request) {

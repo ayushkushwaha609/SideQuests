@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { comments, questArtifacts, users } from "@/db/schema";
+import { comments, questArtifacts, users, sidequests, questMembers } from "@/db/schema";
 import { eq, desc, lt, and } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
@@ -12,6 +12,23 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: questId } = await params;
+  const user = await getUserOrCreate();
+  const quest = await db.query.sidequests.findFirst({ where: eq(sidequests.id, questId) });
+  if (!quest) return NextResponse.json({ error: "Quest not found" }, { status: 404 });
+
+  if (quest.visibility !== "public") {
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const isMember = await db.query.questMembers.findFirst({
+      where: and(
+        eq(questMembers.questId, questId),
+        eq(questMembers.userId, user.id),
+        eq(questMembers.inviteStatus, "accepted")
+      ),
+    });
+    if (!isMember && quest.createdBy !== user.id) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+  }
   const { searchParams } = new URL(request.url);
   const cursor = searchParams.get("cursor");
   const limitParam = Number(searchParams.get("limit") ?? "10");
@@ -43,6 +60,10 @@ export async function GET(
   const pageRows = rows.slice(0, limit);
   const nextCursor = hasMore ? pageRows[pageRows.length - 1]?.comment?.createdAt?.toISOString?.() ?? null : null;
 
+  const cacheControl = quest.visibility === "public"
+    ? "public, s-maxage=10, stale-while-revalidate=30"
+    : "no-store";
+
   return NextResponse.json({
     comments: pageRows.map((r) => ({
       ...r.comment,
@@ -50,7 +71,7 @@ export async function GET(
     })),
     nextCursor,
     hasMore,
-  });
+  }, { headers: { "Cache-Control": cacheControl } });
 }
 
 // POST /api/quests/[id]/comments — add a comment
