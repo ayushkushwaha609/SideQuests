@@ -106,7 +106,7 @@ export async function GET(
     };
   });
 
-  return NextResponse.json({
+  const payload = {
     artifacts: pageRows.map((row) => ({
       ...row.artifact,
       user: row.user,
@@ -114,5 +114,13 @@ export async function GET(
     hasMore,
     nextCursor,
     contributions,
+  };
+
+  const cacheControl = quest.visibility === "public"
+    ? "public, s-maxage=10, stale-while-revalidate=30"
+    : "no-store";
+
+  return NextResponse.json(payload, {
+    headers: { "Cache-Control": cacheControl },
   });
 }
