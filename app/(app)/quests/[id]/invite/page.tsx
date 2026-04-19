@@ -44,7 +44,7 @@ export default async function QuestInvitePage({ params }: { params: Promise<{ id
     .from(questMembers)
     .where(eq(questMembers.questId, quest.id));
 
-  const memberStatus = new Map<string, "pending" | "accepted">();
+  const memberStatus = new Map<string, "pending" | "accepted" | "declined">();
   for (const m of members) {
     memberStatus.set(m.userId, m.inviteStatus);
   }
