@@ -4,6 +4,7 @@ import { users, sidequests, questCompletions, achievements, activities } from "@
 import { eq, and, count } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
+import { sendPushToUser } from "@/lib/push";
 
 export async function POST(
   request: Request,
@@ -120,6 +121,14 @@ export async function POST(
   await checkAndAward("quests_100", total >= 100);
   await checkAndAward("level_5", newLevel >= 5);
   await checkAndAward("level_10", newLevel >= 10);
+
+  if (quest.createdBy !== user.id) {
+    await sendPushToUser(quest.createdBy, {
+      title: "Quest completed",
+      body: `${user.displayName ?? user.username} completed ${quest.title}.`,
+      url: `/quests/${quest.id}`,
+    });
+  }
 
   return NextResponse.json({
     success: true,

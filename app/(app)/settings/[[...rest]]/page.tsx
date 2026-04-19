@@ -3,6 +3,7 @@ import { UserProfile } from "@clerk/nextjs";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import PushNotificationsCard from "@/components/push-notifications";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -60,6 +61,8 @@ export default function SettingsPage() {
           }}
         />
       </div>
+
+      <PushNotificationsCard />
 
       <div
         className="card"

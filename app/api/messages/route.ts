@@ -5,6 +5,7 @@ import { pusherServer } from "@/lib/pusher";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
 import { eq, and, lt, desc } from "drizzle-orm";
+import { sendPushToUser } from "@/lib/push";
 
 export async function GET(req: Request) {
   try {
@@ -72,6 +73,23 @@ export async function POST(req: Request) {
     }).returning();
 
     const sender = await db.query.users.findFirst({ where: eq(users.id, user.id) });
+
+    const [firstId, secondId] = chatId.split("_");
+    const recipientId = firstId === user.id ? secondId : firstId;
+    const senderName = sender?.displayName ?? sender?.username ?? user.username;
+    const preview = text?.trim()
+      ? text.trim().slice(0, 120)
+      : imageUrl
+        ? "Sent you an image"
+        : "Sent you a message";
+
+    if (recipientId && recipientId !== user.id) {
+      await sendPushToUser(recipientId, {
+        title: `${senderName} messaged you`,
+        body: preview,
+        url: `/messages/${sender?.username ?? user.username}`,
+      });
+    }
 
     // 2. Trigger Pusher Event
     await pusherServer.trigger(`chat-${chatId}`, "new-message", {

@@ -4,6 +4,7 @@ import { users, friendships } from "@/db/schema";
 import { eq, and, or, ilike, inArray } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
 import { rateLimit, retryAfterSeconds } from "@/lib/rate-limit";
+import { sendPushToUser } from "@/lib/push";
 
 export async function GET() {
   const user = await getUserOrCreate();
@@ -77,6 +78,12 @@ export async function POST(request: Request) {
         .where(eq(friendships.id, existing.id))
         .returning();
 
+      await sendPushToUser(existing.userId, {
+        title: "Friend request accepted",
+        body: `${user.displayName ?? user.username} accepted your request.`,
+        url: "/friends",
+      });
+
       return NextResponse.json({ friendship, autoAccepted: true }, { status: 200 });
     }
 
@@ -87,6 +94,12 @@ export async function POST(request: Request) {
     .insert(friendships)
     .values({ userId: user.id, friendId, status: "pending" })
     .returning();
+
+  await sendPushToUser(friendId, {
+    title: "New friend request",
+    body: `${user.displayName ?? user.username} sent you a friend request.`,
+    url: "/friends",
+  });
 
   return NextResponse.json({ friendship }, { status: 201 });
 }

@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { users, friendships } from "@/db/schema";
 import { eq, and, or } from "drizzle-orm";
 import { getUserOrCreate } from "@/lib/auth-sync";
+import { sendPushToUser } from "@/lib/push";
 
 export async function PATCH(
   request: Request,
@@ -20,6 +21,12 @@ export async function PATCH(
 
   if (accept) {
     await db.update(friendships).set({ status: "accepted" }).where(eq(friendships.id, friendshipId));
+
+    await sendPushToUser(friendship.userId, {
+      title: "Friend request accepted",
+      body: `${user.displayName ?? user.username} accepted your request.`,
+      url: "/friends",
+    });
   } else {
     await db.delete(friendships).where(eq(friendships.id, friendshipId));
   }
