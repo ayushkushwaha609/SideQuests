@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { MessageCircle, Sun, Moon, User, Download } from "lucide-react";
+import { useUnreadCount } from "@/components/use-unread-count";
 
 type InstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -17,11 +18,10 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessages = 0 }: AppHeaderProps) {
-  const unreadLabel = unreadMessages > 9 ? "9+" : String(unreadMessages);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(unreadMessages);
+  const unreadCount = useUnreadCount(unreadMessages);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -42,35 +42,7 @@ export default function AppHeader({ xp = 0, level = 1, streak = 0, unreadMessage
     window.localStorage.setItem("theme", theme);
   }, [theme, mounted]);
 
-  useEffect(() => {
-    setUnreadCount(unreadMessages);
-  }, [unreadMessages]);
-
-  useEffect(() => {
-    let timer: number | undefined;
-
-    async function refreshUnread() {
-      try {
-        const res = await fetch("/api/messages/unread", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = await res.json();
-        setUnreadCount(Number(data.count ?? 0));
-      } catch {
-        // Ignore network errors; we'll retry on next interval.
-      }
-    }
-
-    refreshUnread();
-    timer = window.setInterval(refreshUnread, 15000);
-
-    const onFocus = () => refreshUnread();
-    window.addEventListener("focus", onFocus);
-
-    return () => {
-      if (timer) window.clearInterval(timer);
-      window.removeEventListener("focus", onFocus);
-    };
-  }, []);
+  
 
   useEffect(() => {
     if (!menuOpen) return;
