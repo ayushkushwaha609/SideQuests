@@ -46,7 +46,6 @@ export default function QuestsPage() {
   const [quests, setQuests] = useState<Quest[]>([]);
   const [invites, setInvites] = useState<InviteItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [completing, setCompleting] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -125,13 +124,6 @@ export default function QuestsPage() {
     }
   }
 
-  async function completeQuest(questId: string, e: React.MouseEvent) {
-    e.preventDefault();
-    setCompleting(questId);
-    await fetch(`/api/quests/${questId}/complete`, { method: "POST" });
-    await fetchQuests();
-    setCompleting(null);
-  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
@@ -226,19 +218,16 @@ export default function QuestsPage() {
                 style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}
               >
                 {/* Complete button */}
-                <button
-                  onClick={(e) => completeQuest(quest.id, e)}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0 }}
-                  aria-label="complete quest"
+                <span
+                  style={{ display: "inline-flex", cursor: "pointer", padding: 4, flexShrink: 0 }}
+                  aria-hidden="true"
                 >
                   {quest.status === "completed" ? (
                     <CheckCircle2 size={26} color="var(--success)" />
-                  ) : completing === quest.id ? (
-                    <Circle size={26} color="var(--xp-purple)" style={{ animation: "pulse-glow 1s infinite" }} />
                   ) : (
                     <Circle size={26} color="var(--text-muted)" />
                   )}
-                </button>
+                </span>
 
                 {/* Emoji + content */}
                 <div style={{ flex: 1, minWidth: 0 }}>
