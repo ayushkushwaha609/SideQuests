@@ -188,6 +188,18 @@ export async function POST(
   await checkAndAward("level_5", newLevel >= 5);
   await checkAndAward("level_10", newLevel >= 10);
 
+  if (earnedAchievements.length > 0) {
+    await db.insert(activities).values(
+      earnedAchievements.map((type) => ({
+        userId: user.id,
+        type: "achievement_earned",
+        questId: quest.id,
+        achievementType: type as any,
+        isPublic: quest.visibility === "public",
+      }))
+    );
+  }
+
   if (quest.createdBy !== user.id) {
     await sendPushToUser(quest.createdBy, {
       title: "Quest completed",

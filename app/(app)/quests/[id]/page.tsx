@@ -1,14 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
-import { users, sidequests, questMembers, questCompletions, directMessages } from "@/db/schema";
+import { users, sidequests, questMembers, questCompletions } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import Link from "next/link";
 import { ArrowLeft, Zap, Users, CheckCircle2 } from "lucide-react";
 import QuestCompleteButton from "./complete-button";
 import DeleteQuestButton from "./delete-button";
 import CommentsSection from "@/components/comments-section";
-import QuestChat from "@/components/quest-chat";
 import QuestRepository from "@/components/quest-repository";
 import LeaveQuestButton from "@/components/leave-quest-button";
 
@@ -28,35 +27,42 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
   const completions = await db
     .select()
     .from(questCompletions)
-    .where(eq(questCompletions.questId, id));
+    .where(eq(questCompletions.questId, id))
+    .orderBy(desc(questCompletions.completedAt));
+
+  const now = new Date();
+  function getStartOfPeriod(recur: string): Date | null {
+    const d = new Date(now);
+    d.setHours(0, 0, 0, 0);
+    if (recur === "daily") return d;
+    if (recur === "weekly") {
+      d.setDate(d.getDate() - d.getDay());
+      return d;
+    }
+    if (recur === "monthly") {
+      d.setDate(1);
+      return d;
+    }
+    if (recur === "yearly") {
+      d.setMonth(0, 1);
+      return d;
+    }
+    return null;
+  }
+
+  const startOfPeriod = getStartOfPeriod(quest.recurrence);
+  const completionsForPeriod = startOfPeriod
+    ? completions.filter((c) => c.completedAt >= startOfPeriod)
+    : completions;
 
   const myCompletion = currentUser
-    ? completions.find((c) => c.userId === currentUser.id)
+    ? completionsForPeriod.find((c) => c.userId === currentUser.id)
     : null;
 
   const creator = await db.query.users.findFirst({ where: eq(users.id, quest.createdBy) });
 
   const isOwner = currentUser?.id === quest.createdBy;
   const isMember = !!currentUser && (isOwner || members.some((m) => m.userId === currentUser.id));
-
-  // Fetch initial messages for quest chat
-  const qChatId = `quest_${quest.id}`;
-  const initialMessagesWithUsers = await db.query.directMessages.findMany({
-    where: eq(directMessages.chatId, qChatId),
-    orderBy: [desc(directMessages.createdAt)],
-    limit: 50,
-    with: { user: true },
-  });
-
-  const formattedQuestMessages = initialMessagesWithUsers.reverse().map((m) => ({
-    id: m.id,
-    userId: m.userId,
-    username: m.user.username,
-    displayName: m.user.displayName,
-    avatarUrl: m.user.avatarUrl,
-    text: m.text,
-    createdAt: m.createdAt,
-  }));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-5)" }}>
@@ -97,7 +103,7 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
       <div className="grid-2">
         <div className="seamless-item" style={{ textAlign: "center", padding: "var(--space-4)" }}>
           <div style={{ fontSize: "1.5rem", fontWeight: "var(--weight-bold)", color: "var(--success-light)" }}>
-            {completions.length}
+            {completionsForPeriod.length}
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 4 }}>Completions</div>
         </div>
@@ -110,11 +116,11 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
       </div>
 
       {/* Completions list */}
-      {completions.length > 0 && (
+      {completionsForPeriod.length > 0 && (
         <section>
           <h3 style={{ marginBottom: "var(--space-3)" }}>Recent Completions</h3>
           <div className="seamless-stack">
-            {completions.slice(0, 5).map((c) => (
+            {completionsForPeriod.slice(0, 5).map((c) => (
               <div key={c.id} className="seamless-item seamless-item-compact" style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
                   <CheckCircle2 size={18} color="var(--success)" />
@@ -151,22 +157,6 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
         <h3 style={{ marginBottom: "var(--space-3)" }}>Activity</h3>
         <QuestRepository questId={quest.id} />
       </section>
-      {/* Quest Chat */}
-      {currentUser && (
-        <section>
-          <h3 style={{ marginBottom: "var(--space-3)" }}>Chat</h3>
-          <QuestChat
-            questId={quest.id}
-            currentUser={{
-              id: currentUser.id,
-              username: currentUser.username,
-              displayName: currentUser.displayName,
-              avatarUrl: currentUser.avatarUrl,
-            }}
-            initialMessages={formattedQuestMessages}
-          />
-        </section>
-      )}
 
       {/* Owner/member actions */}
       {isOwner ? (

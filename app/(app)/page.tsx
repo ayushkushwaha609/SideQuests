@@ -53,6 +53,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
     .map(f => f.userId === user.id ? f.friendId : f.userId);
   const displayName = user.displayName ?? user.username ?? "Adventurer";
   const friendsCount = acceptedFriendIds.length;
+  const friendAndSelfIds = [user.id, ...acceptedFriendIds];
 
   // -----------------------------------------------------
   // TAB: FRIENDS ACTIVITY
@@ -60,8 +61,8 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   let recentActivity: any[] = [];
   let friendsHasMore = false;
   let friendsNextCursor: string | null = null;
-  if (activeTab === "friends" && acceptedFriendIds.length > 0) {
-    // Only friends, NOT self. Also join quest details for completions
+  if (activeTab === "friends") {
+    // Friends and self. Also join quest details for completions
     const acts = await db
       .select({
         activity: activities,
@@ -72,7 +73,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       .leftJoin(sidequests, eq(activities.questId, sidequests.id))
       .leftJoin(users, eq(activities.userId, users.id))
       .where(and(
-        inArray(activities.userId, acceptedFriendIds),
+        inArray(activities.userId, friendAndSelfIds),
         or(
           ne(activities.type, "quest_completed"),
           gte(activities.createdAt, sharedCutoff)
@@ -108,7 +109,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
       .leftJoin(users, eq(activities.userId, users.id))
       .where(and(
         eq(activities.isPublic, true),
-        eq(activities.type, "quest_completed"),
+        inArray(activities.type, ["quest_completed", "achievement_earned"]),
         gte(activities.createdAt, sharedCutoff),
         publicClearedAt ? gte(activities.createdAt, publicClearedAt) : undefined,
         hasValidCursor ? lt(activities.createdAt, cursor!) : undefined

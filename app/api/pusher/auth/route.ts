@@ -73,10 +73,7 @@ export async function POST(request: Request) {
   } else if (channelName.startsWith("private-chat-")) {
     const chatId = channelName.replace("private-chat-", "");
     if (chatId.startsWith("quest_")) {
-      const questId = chatId.replace("quest_", "");
-      if (!await canAccessQuestChannel(user.id, questId)) {
-        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      }
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     } else {
       const [firstId, secondId] = chatId.split("_");
       if (firstId !== user.id && secondId !== user.id) {

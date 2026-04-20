@@ -34,29 +34,31 @@ export default function ActivityCard({ activityType, timeLabel, actor, quest, va
   const router = useRouter();
   const displayName = actor.displayName ?? actor.username;
   const isQuestCompletion = activityType === "quest_completed" && !!quest;
+  const isQuestLinkedAchievement = activityType === "achievement_earned" && !!quest;
+  const isQuestLinked = isQuestCompletion || isQuestLinkedAchievement;
 
   const handleNavigate = useCallback(() => {
-    if (!isQuestCompletion || !quest) return;
+    if (!isQuestLinked || !quest) return;
     router.push(`/quests/${quest.id}`);
-  }, [isQuestCompletion, quest, router]);
+  }, [isQuestLinked, quest, router]);
 
   const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
-    if (!isQuestCompletion || !quest) return;
+    if (!isQuestLinked || !quest) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       router.push(`/quests/${quest.id}`);
     }
-  }, [isQuestCompletion, quest, router]);
+  }, [isQuestLinked, quest, router]);
 
-  const cardClassName = `seamless-item animate-slide-up stagger-item${isQuestCompletion ? " quest-tile-link" : ""}`;
+  const cardClassName = `seamless-item animate-slide-up stagger-item${isQuestLinked ? " quest-tile-link" : ""}`;
 
   return (
     <div
       className={cardClassName}
-      onClick={isQuestCompletion ? handleNavigate : undefined}
-      onKeyDown={isQuestCompletion ? handleKeyDown : undefined}
-      role={isQuestCompletion ? "button" : undefined}
-      tabIndex={isQuestCompletion ? 0 : undefined}
+      onClick={isQuestLinked ? handleNavigate : undefined}
+      onKeyDown={isQuestLinked ? handleKeyDown : undefined}
+      role={isQuestLinked ? "button" : undefined}
+      tabIndex={isQuestLinked ? 0 : undefined}
     >
       {/* Header */}
       <div className="flex items-center gap-1" style={{ gap: "var(--space-3)", marginBottom: "var(--space-3)" }}>
@@ -89,7 +91,7 @@ export default function ActivityCard({ activityType, timeLabel, actor, quest, va
       </div>
 
       {/* Quest Context Block */}
-      {isQuestCompletion && quest && (
+      {isQuestLinked && quest && (
         <div className="quest-tile quest-tile-compact" style={{ display: "flex", gap: "var(--space-3)", marginTop: "var(--space-2)" }}>
           <span style={{ fontSize: "1.5rem" }}>{quest.coverEmoji}</span>
           <div>
@@ -122,7 +124,7 @@ export default function ActivityCard({ activityType, timeLabel, actor, quest, va
       )}
 
       {/* Comments */}
-      {isQuestCompletion && quest && (
+      {isQuestLinked && quest && (
         <div onClick={(event) => event.stopPropagation()}>
           <CommentToggle questId={quest.id} />
         </div>

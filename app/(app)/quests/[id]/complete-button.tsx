@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CheckCircle2, Circle, Zap, Image as ImageIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
@@ -23,6 +23,10 @@ export default function QuestCompleteButton({ questId, isCompleted, xpReward }: 
   const [sendingProof, setSendingProof] = useState(false);
   const [proofSent, setProofSent] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setCompleted(isCompleted);
+  }, [isCompleted]);
 
   async function handleComplete(share: boolean) {
     if (completed || loading) return;
