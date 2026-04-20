@@ -103,7 +103,7 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
       <div className="grid-2">
         <div className="seamless-item" style={{ textAlign: "center", padding: "var(--space-4)" }}>
           <div style={{ fontSize: "1.5rem", fontWeight: "var(--weight-bold)", color: "var(--success-light)" }}>
-            {completionsForPeriod.length}
+            {completions.length}
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginTop: 4 }}>Completions</div>
         </div>
@@ -116,11 +116,11 @@ export default async function QuestDetailPage({ params }: { params: Promise<{ id
       </div>
 
       {/* Completions list */}
-      {completionsForPeriod.length > 0 && (
+      {completions.length > 0 && (
         <section>
           <h3 style={{ marginBottom: "var(--space-3)" }}>Recent Completions</h3>
           <div className="seamless-stack">
-            {completionsForPeriod.slice(0, 5).map((c) => (
+            {completions.slice(0, 5).map((c) => (
               <div key={c.id} className="seamless-item seamless-item-compact" style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
                   <CheckCircle2 size={18} color="var(--success)" />
