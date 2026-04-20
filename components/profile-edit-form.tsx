@@ -43,7 +43,6 @@ export default function ProfileEditForm({ user }: { user: EditUser }) {
       if (!res.ok) throw new Error("Failed to save profile");
       
       router.push(`/profile/${user.username}`);
-      router.refresh();
     } catch (err) {
       console.error(err);
       alert("Error saving profile");

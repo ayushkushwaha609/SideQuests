@@ -17,7 +17,6 @@ export default function DeleteQuestButton({ questId }: { questId: string }) {
       });
       if (res.ok) {
         router.push("/quests");
-        router.refresh();
       } else {
         alert("Failed to delete quest.");
         setDeleting(false);

@@ -16,7 +16,6 @@ export default function LeaveQuestButton({ questId }: { questId: string }) {
       const res = await fetch(`/api/quests/${questId}/leave`, { method: "POST" });
       if (res.ok) {
         router.push("/quests");
-        router.refresh();
       } else {
         alert("Failed to opt out of the quest.");
         setLeaving(false);
